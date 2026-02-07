@@ -1,0 +1,88 @@
+{
+  "kind": "build_request",
+  "title": "Explain custom domain rules and tighten display-name validation (5–50 chars, letters/numbers/hyphens)",
+  "priority": "normal",
+  "requirements": [
+    {
+      "id": "REQ-15",
+      "text": "Add an in-app explanation of the platform custom-domain prompt and its naming rules, making it clear that a custom domain is optional and that domain names must be 5–50 characters and contain only letters, numbers, and hyphens (no spaces, '+', '/', commas, or other punctuation).",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "Publish it but explain the domain 21+-rock/punk/metal-social-app-wgegate,-profiles must be between 5 and 50 characters and contain only letters, numbers, and hyphens."
+        ]
+      },
+      "acceptanceCriteria": [
+        "A user can find a short English explanation in the app UI clarifying what the custom domain prompt means and that it is optional.",
+        "The explanation explicitly states the 5–50 character rule and the allowed character set: letters, numbers, and hyphens only.",
+        "The explanation includes at least one valid example domain slug (e.g., \"rock-punk-metal-social-app\") and at least one invalid example (e.g., one containing '+').",
+        "All user-facing text is in English."
+      ]
+    },
+    {
+      "id": "REQ-16",
+      "text": "Enforce display-name validation in the backend so that UserProfile.displayName must be between 5 and 50 characters (inclusive) and may contain only letters (A–Z, a–z), numbers (0–9), and hyphens ('-'). Reject invalid values with a clear English error message.",
+      "target": "backend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "profiles must be between 5 and 50 characters and contain only letters, numbers, and hyphens."
+        ]
+      },
+      "acceptanceCriteria": [
+        "Creating a profile fails if displayName length is < 5 or > 50 with a clear English error message.",
+        "Creating/updating/saving a profile fails if displayName contains characters other than letters, numbers, or hyphens (including spaces) with a clear English error message.",
+        "Creating/updating/saving a profile succeeds when displayName is 5–50 characters and uses only letters, numbers, and hyphens.",
+        "Validation is applied consistently anywhere the backend validates a profile (create + update/save flows)."
+      ]
+    },
+    {
+      "id": "REQ-17",
+      "text": "Add matching frontend validation for display name on the Age Verification (profile creation) screen and Profile edit screen: require 5–50 characters and only letters, numbers, and hyphens; show clear English inline guidance and prevent submission when invalid.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "profiles must be between 5 and 50 characters and contain only letters, numbers, and hyphens."
+        ]
+      },
+      "acceptanceCriteria": [
+        "On Age Verification, entering an invalid display name (too short/too long/invalid characters) blocks submission and shows an English error message describing the rule.",
+        "On Profile edit, entering an invalid display name blocks Save and shows an English error message describing the rule.",
+        "The input helper text (or equivalent) states the rule: 5–50 characters; letters, numbers, and hyphens only.",
+        "Frontend validation messages do not expose stack traces or internal details."
+      ]
+    }
+  ],
+  "constraints": [
+    "Backend must remain a single Motoko actor in backend/main.mo; do not introduce additional backend services.",
+    "Do not edit files under frontend/src/components/ui or other paths listed as immutable in SYSTEM_CONTEXT.",
+    "Use English for all user-facing text."
+  ],
+  "nonGoals": [
+    "Implementing actual custom-domain attachment or DNS management (this is handled by the publishing platform, not the app).",
+    "Changing unrelated profile fields or adding new profile features beyond the requested display-name constraints.",
+    "Adding third-party authentication providers or external domain registrars."
+  ],
+  "imageRequirements": {
+    "required": [],
+    "edits": []
+  },
+  "userProfileUpdate": {
+    "goalsToAdd": [],
+    "goalsToRemove": [],
+    "preferencesToAdd": [],
+    "preferencesToRemove": [],
+    "miscToAdd": [],
+    "miscToRemove": [],
+    "fieldsToSet": {},
+    "fieldsToDelete": []
+  }
+}

@@ -1,0 +1,61 @@
+{
+  "kind": "implementation_plan",
+  "version": "1.0",
+  "title": "Custom-domain rules explanation + display-name validation (frontend)",
+  "requirements": [
+    {
+      "id": "REQ-15",
+      "summary": "Add an in-app English explanation of the optional custom-domain prompt and its 5–50 char slug rules with valid/invalid examples.",
+      "acceptanceCriteria": [
+        "A user can find a short English explanation in the app UI clarifying what the custom domain prompt means and that it is optional.",
+        "The explanation explicitly states the 5–50 character rule and the allowed character set: letters, numbers, and hyphens only.",
+        "The explanation includes at least one valid example domain slug (e.g., \"rock-punk-metal-social-app\") and at least one invalid example (e.g., one containing '+').",
+        "All user-facing text is in English."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/pages/SettingsPage.tsx",
+          "operation": "modify",
+          "description": "Add a new Settings section/card that explains the platform’s custom-domain prompt, clearly states it is optional, lists the exact slug rules (5–50 chars; letters/numbers/hyphens only; no spaces or punctuation like '+', '/', commas), and provides at least one valid and one invalid example in English."
+        },
+        {
+          "path": "frontend/src/components/layout/AppShell.tsx",
+          "operation": "modify",
+          "description": "Wire discoverability by adding a small helper text/link-like hint in the Settings navigation area or Settings header context (within existing Settings page flow) to help users find the new custom-domain explanation section without adding new routes."
+        }
+      ]
+    },
+    {
+      "id": "REQ-17",
+      "summary": "Add matching frontend display-name validation (5–50 chars; letters/numbers/hyphens only) on Age Verification and Profile edit screens with inline guidance and blocked submission.",
+      "acceptanceCriteria": [
+        "On Age Verification, entering an invalid display name (too short/too long/invalid characters) blocks submission and shows an English error message describing the rule.",
+        "On Profile edit, entering an invalid display name blocks Save and shows an English error message describing the rule.",
+        "The input helper text (or equivalent) states the rule: 5–50 characters; letters, numbers, and hyphens only.",
+        "Frontend validation messages do not expose stack traces or internal details."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/utils/validation.ts",
+          "operation": "create",
+          "description": "Create shared validation helpers for display names (length 5–50 inclusive; allowed characters A–Z, a–z, 0–9, hyphen), returning a boolean and a clear English error string suitable for inline form messaging."
+        },
+        {
+          "path": "frontend/src/pages/AgeVerificationPage.tsx",
+          "operation": "modify",
+          "description": "Use the shared validation helper to validate displayName on change/submit; add inline helper text stating the rule and an inline English error message when invalid; prevent submission by disabling the Continue button and by guarding in handleSubmit when the value is invalid (do not rely on backend errors)."
+        },
+        {
+          "path": "frontend/src/pages/ProfilePage.tsx",
+          "operation": "modify",
+          "description": "Use the shared validation helper when editing displayName; add inline helper text stating the rule and an inline English error message; block Save when invalid by disabling the Save action and guarding handleSave; ensure errors remain user-friendly and do not reveal stack traces or internal details."
+        },
+        {
+          "path": "frontend/src/utils/backendErrors.ts",
+          "operation": "modify",
+          "description": "Extend backend error normalization to map any backend display-name invalid-character / length-range messages into short, clear English messages consistent with the new 5–50 and letters/numbers/hyphens-only rule (keeping existing sanitization behavior)."
+        }
+      ]
+    }
+  ]
+}

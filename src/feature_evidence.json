@@ -1,0 +1,46 @@
+{
+  "kind": "feature_evidence_report",
+  "features": [
+    {
+      "featureId": "feature-add-an-in-app-explanation-of-the-platform-custom-domain-prompt-and-its-naming-rules-making-it-clear-that-a-custom-domain-is-optional-and-that-domain-names-must-be-5-50-characters-and-contain-only-letters-numbers-and-hyphens-no-spaces-commas-or-other-punctuation",
+      "featureTitle": "Add an in-app explanation of the platform custom-domain prompt and its naming rules, making it clear that a custom domain is optional and that domain names must be 5–50 characters and contain only letters, numbers, and hyphens (no spaces, '+', '/', commas, or other punctuation).",
+      "files": [
+        "frontend/src/pages/SettingsPage.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-15"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-add-matching-frontend-validation-for-display-name-on-the-age-verification-profile-creation-screen-and-profile-edit-screen-require-5-50-characters-and-only-letters-numbers-and-hyphens-show-clear-english-inline-guidance-and-prevent-submission-when-invalid",
+      "featureTitle": "Add matching frontend validation for display name on the Age Verification (profile creation) screen and Profile edit screen: require 5–50 characters and only letters, numbers, and hyphens; show clear English inline guidance and prevent submission when invalid.",
+      "files": [
+        "frontend/src/pages/AgeVerificationPage.tsx",
+        "frontend/src/pages/ProfilePage.tsx",
+        "frontend/src/utils/backendErrors.ts",
+        "frontend/src/utils/validation.ts"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-17"
+      ],
+      "confidence": "high"
+    }
+  ]
+}

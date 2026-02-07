@@ -1,2 +1,3 @@
-# 21-rock-punk-metal-social-app-age-gate-profiles-friendships-and-unfiltered-feed
-Exported from Caffeine project: 21+ rock/punk/metal social app: age gate, profiles, friendships, and unfiltered feed
+## 
+
+To run app build and run docker image: `docker build -t app . docker run -it --network host app`
