@@ -56,8 +56,11 @@ export type UserRole = { 'admin' : null } |
 export interface _SERVICE {
   '_initializeAccessControlWithSecret' : ActorMethod<[string], undefined>,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
+  'blockUser' : ActorMethod<[Principal], undefined>,
   'createPost' : ActorMethod<[string], bigint>,
+  'deleteOwnAccount' : ActorMethod<[], undefined>,
   'deletePost' : ActorMethod<[bigint], undefined>,
+  'getBlockedUsers' : ActorMethod<[], Array<Principal>>,
   'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
   'getCallerUserRole' : ActorMethod<[], UserRole>,
   'getFeed' : ActorMethod<[], Array<FeedPost>>,
@@ -67,6 +70,7 @@ export interface _SERVICE {
   'getUserPosts' : ActorMethod<[Principal], Array<FeedPost>>,
   'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
+  'isUserBlocked' : ActorMethod<[Principal], boolean>,
   'likePost' : ActorMethod<[bigint], undefined>,
   'reportContent' : ActorMethod<
     [[] | [Principal], [] | [bigint], string],
@@ -75,6 +79,7 @@ export interface _SERVICE {
   'respondToFriendRequest' : ActorMethod<[Principal, boolean], undefined>,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
   'sendFriendRequest' : ActorMethod<[Principal], undefined>,
+  'unblockUser' : ActorMethod<[Principal], undefined>,
   'updateProfile' : ActorMethod<[UserProfile], undefined>,
   'verifyAgeAndCreateProfile' : ActorMethod<[UserProfile], undefined>,
 }

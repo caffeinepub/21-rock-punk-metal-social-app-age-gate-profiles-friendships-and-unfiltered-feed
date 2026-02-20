@@ -1,376 +1,223 @@
 import { useState, useEffect } from 'react';
-import { useGetCallerUserProfile, useUpdateProfile } from '../hooks/useQueries';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Checkbox } from '@/components/ui/checkbox';
+import { useGetCallerProfile, useUpdateProfile } from '../hooks/useQueries';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
+import { Textarea } from '../components/ui/textarea';
+import { Label } from '../components/ui/label';
 import { toast } from 'sonner';
-import { Edit2, Save, X } from 'lucide-react';
-import { GENRE_OPTIONS, getGenreLabel } from '../lib/genres';
-import { validateDisplayName, getDisplayNameRules } from '../utils/validation';
-import type { Genre, UserProfile } from '../backend';
-
-const MAX_DISPLAY_NAME_LENGTH = 50;
-const MAX_BIO_LENGTH = 200;
-const MAX_LOCATION_LENGTH = 100;
-const MAX_BAND_NAME_LENGTH = 100;
-const MAX_FAVORITE_BANDS = 20;
+import type { UserProfile, Genre } from '../backend';
+import { GENRE_OPTIONS } from '../lib/genres';
+import { validateDisplayName } from '../utils/validation';
+import { ClearFavoriteBandsConfirmDialog } from '../components/profile/ClearFavoriteBandsConfirmDialog';
 
 export default function ProfilePage() {
-  const { data: profile, isLoading } = useGetCallerUserProfile();
-  const updateProfileMutation = useUpdateProfile();
-  const [isEditing, setIsEditing] = useState(false);
+  const { data: profile, isLoading } = useGetCallerProfile();
+  const updateProfile = useUpdateProfile();
 
   const [displayName, setDisplayName] = useState('');
-  const [displayNameError, setDisplayNameError] = useState<string | undefined>();
+  const [displayNameError, setDisplayNameError] = useState('');
   const [bio, setBio] = useState('');
   const [location, setLocation] = useState('');
-  const [avatarUrl, setAvatarUrl] = useState('');
-  const [selectedGenres, setSelectedGenres] = useState<Genre[]>([]);
+  const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
   const [favoriteBands, setFavoriteBands] = useState('');
+  const [initialFavoriteBands, setInitialFavoriteBands] = useState('');
+  const [showClearBandsDialog, setShowClearBandsDialog] = useState(false);
 
   useEffect(() => {
     if (profile) {
       setDisplayName(profile.displayName);
       setBio(profile.bio);
       setLocation(profile.location || '');
-      setAvatarUrl(profile.avatarUrl || '');
-      setSelectedGenres(profile.favoriteGenres);
-      setFavoriteBands(profile.favoriteBands.join('\n'));
+      setSelectedGenres(
+        profile.favoriteGenres.map((g) =>
+          typeof g === 'object' && '__kind__' in g ? g.__kind__ : 'other'
+        )
+      );
+      const bandsText = profile.favoriteBands.join(', ');
+      setFavoriteBands(bandsText);
+      setInitialFavoriteBands(bandsText);
     }
   }, [profile]);
 
-  const handleGenreToggle = (genre: Genre) => {
-    setSelectedGenres((prev) => {
-      const exists = prev.some((g) => JSON.stringify(g) === JSON.stringify(genre));
-      if (exists) {
-        return prev.filter((g) => JSON.stringify(g) !== JSON.stringify(genre));
-      } else {
-        return [...prev, genre];
-      }
-    });
-  };
-
-  const isGenreSelected = (genre: Genre) => {
-    return selectedGenres.some((g) => JSON.stringify(g) === JSON.stringify(genre));
-  };
-
   const handleDisplayNameChange = (value: string) => {
     setDisplayName(value);
-    
-    // Clear error when user starts typing
-    if (displayNameError && value.length > 0) {
-      setDisplayNameError(undefined);
-    }
+    const validation = validateDisplayName(value);
+    setDisplayNameError(validation.isValid ? '' : (validation.error || ''));
+  };
+
+  const handleGenreToggle = (genreKey: string) => {
+    setSelectedGenres((prev) =>
+      prev.includes(genreKey)
+        ? prev.filter((g) => g !== genreKey)
+        : [...prev, genreKey]
+    );
   };
 
   const handleSave = async () => {
-    if (!displayName.trim()) {
-      setDisplayNameError('Display name is required');
-      toast.error('Display name is required');
-      return;
-    }
-
-    // Validate display name
-    const validation = validateDisplayName(displayName.trim());
+    const validation = validateDisplayName(displayName);
     if (!validation.isValid) {
-      setDisplayNameError(validation.error);
-      toast.error(validation.error);
-      return;
-    }
-
-    if (bio.length > MAX_BIO_LENGTH) {
-      toast.error(`Bio is too long (max ${MAX_BIO_LENGTH} characters)`);
-      return;
-    }
-
-    if (location.length > MAX_LOCATION_LENGTH) {
-      toast.error(`Location is too long (max ${MAX_LOCATION_LENGTH} characters)`);
+      setDisplayNameError(validation.error || 'Invalid display name');
       return;
     }
 
     const bandsArray = favoriteBands
-      .split('\n')
+      .split(',')
       .map((b) => b.trim())
       .filter((b) => b.length > 0);
 
-    if (bandsArray.length > MAX_FAVORITE_BANDS) {
-      toast.error(`Too many bands (max ${MAX_FAVORITE_BANDS})`);
+    if (initialFavoriteBands.trim() !== '' && bandsArray.length === 0) {
+      setShowClearBandsDialog(true);
       return;
     }
 
-    const tooLongBand = bandsArray.find((b) => b.length > MAX_BAND_NAME_LENGTH);
-    if (tooLongBand) {
-      toast.error(`Band name "${tooLongBand.substring(0, 20)}..." is too long (max ${MAX_BAND_NAME_LENGTH} characters)`);
-      return;
-    }
+    await performSave(bandsArray);
+  };
+
+  const performSave = async (bandsArray: string[]) => {
+    const genres: Genre[] = selectedGenres.map((key) => {
+      if (key === 'other') {
+        return { __kind__: 'other', other: 'Other' };
+      }
+      return { __kind__: key, [key]: null } as Genre;
+    });
 
     const updatedProfile: UserProfile = {
-      displayName: displayName.trim(),
-      bio: bio.trim(),
-      location: location.trim() || undefined,
-      avatarUrl: avatarUrl.trim() || undefined,
-      favoriteGenres: selectedGenres,
+      displayName,
+      bio,
+      location: location || undefined,
+      favoriteGenres: genres,
       favoriteBands: bandsArray,
+      avatarUrl: profile?.avatarUrl,
       isAgeVerified: true,
     };
 
     try {
-      await updateProfileMutation.mutateAsync(updatedProfile);
-      toast.success('Profile updated!');
-      setIsEditing(false);
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to update profile');
+      await updateProfile.mutateAsync(updatedProfile);
+      setInitialFavoriteBands(favoriteBands);
+      toast.success('Profile updated successfully');
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Failed to update profile';
+      toast.error(message);
     }
   };
 
-  const handleCancel = () => {
-    if (profile) {
-      setDisplayName(profile.displayName);
-      setBio(profile.bio);
-      setLocation(profile.location || '');
-      setAvatarUrl(profile.avatarUrl || '');
-      setSelectedGenres(profile.favoriteGenres);
-      setFavoriteBands(profile.favoriteBands.join('\n'));
-      setDisplayNameError(undefined);
-    }
-    setIsEditing(false);
+  const handleConfirmClearBands = async () => {
+    setShowClearBandsDialog(false);
+    await performSave([]);
   };
-
-  const validation = validateDisplayName(displayName.trim());
-  const isDisplayNameValid = displayName.trim().length > 0 && validation.isValid;
-  const canSave = isDisplayNameValid && !updateProfileMutation.isPending;
 
   if (isLoading) {
     return (
-      <div className="container max-w-4xl py-8">
-        <Card>
-          <CardContent className="py-12 text-center">
-            <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-            <p className="mt-4 text-muted-foreground">Loading profile...</p>
-          </CardContent>
-        </Card>
+      <div className="max-w-2xl mx-auto py-8 px-4">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+        </div>
       </div>
     );
   }
 
-  if (!profile) {
-    return (
-      <div className="container max-w-4xl py-8">
-        <Card>
-          <CardContent className="py-12 text-center">
-            <p className="text-muted-foreground">Profile not found</p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  const currentBandCount = initialFavoriteBands
+    .split(',')
+    .filter((b) => b.trim().length > 0).length;
 
   return (
-    <div className="container max-w-4xl py-8">
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Your Profile</CardTitle>
-          {!isEditing ? (
-            <Button onClick={() => setIsEditing(true)} variant="outline" size="sm">
-              <Edit2 className="mr-2 h-4 w-4" />
-              Edit
-            </Button>
-          ) : (
-            <div className="flex gap-2">
-              <Button
-                onClick={handleSave}
-                size="sm"
-                disabled={!canSave}
-              >
-                {updateProfileMutation.isPending ? (
-                  <>
-                    <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
-                    Saving...
-                  </>
-                ) : (
-                  <>
-                    <Save className="mr-2 h-4 w-4" />
-                    Save
-                  </>
-                )}
-              </Button>
-              <Button
-                onClick={handleCancel}
-                variant="outline"
-                size="sm"
-                disabled={updateProfileMutation.isPending}
-              >
-                <X className="mr-2 h-4 w-4" />
-                Cancel
-              </Button>
+    <>
+      <div className="max-w-2xl mx-auto py-8 px-4">
+        <Card>
+          <CardHeader>
+            <CardTitle>Edit Profile</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="displayName">Display Name</Label>
+              <Input
+                id="displayName"
+                value={displayName}
+                onChange={(e) => handleDisplayNameChange(e.target.value)}
+                placeholder="Your display name"
+              />
+              {displayNameError && (
+                <p className="text-sm text-destructive">{displayNameError}</p>
+              )}
             </div>
-          )}
-        </CardHeader>
 
-        <CardContent className="space-y-6">
-          <div className="flex items-center gap-6">
-            <Avatar className="h-24 w-24">
-              <AvatarImage src={avatarUrl || profile.avatarUrl} />
-              <AvatarFallback>
-                <img src="/assets/generated/default-avatar.dim_256x256.png" alt="Avatar" />
-              </AvatarFallback>
-            </Avatar>
+            <div className="space-y-2">
+              <Label htmlFor="bio">Bio</Label>
+              <Textarea
+                id="bio"
+                value={bio}
+                onChange={(e) => setBio(e.target.value)}
+                placeholder="Tell us about yourself"
+                rows={4}
+              />
+            </div>
 
-            {isEditing && (
-              <div className="flex-1">
-                <Label htmlFor="avatarUrl">Avatar URL (Optional)</Label>
-                <Input
-                  id="avatarUrl"
-                  value={avatarUrl}
-                  onChange={(e) => setAvatarUrl(e.target.value)}
-                  placeholder="https://..."
-                />
-              </div>
-            )}
-          </div>
+            <div className="space-y-2">
+              <Label htmlFor="location">Location (Optional)</Label>
+              <Input
+                id="location"
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                placeholder="City, State"
+              />
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="displayName">Display Name *</Label>
-            {isEditing ? (
-              <>
-                <Input
-                  id="displayName"
-                  value={displayName}
-                  onChange={(e) => handleDisplayNameChange(e.target.value)}
-                  maxLength={MAX_DISPLAY_NAME_LENGTH}
-                  className={displayNameError ? 'border-destructive' : ''}
-                />
-                <p className="text-xs text-muted-foreground">
-                  {getDisplayNameRules()}
-                </p>
-                {displayNameError && (
-                  <p className="text-xs text-destructive">{displayNameError}</p>
-                )}
-                <p className="text-xs text-muted-foreground">
-                  {displayName.length} / {MAX_DISPLAY_NAME_LENGTH}
-                </p>
-              </>
-            ) : (
-              <p className="text-lg font-bold">{profile.displayName}</p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="bio">Bio</Label>
-            {isEditing ? (
-              <>
-                <Textarea
-                  id="bio"
-                  value={bio}
-                  onChange={(e) => setBio(e.target.value)}
-                  rows={3}
-                  maxLength={MAX_BIO_LENGTH}
-                  className="resize-none"
-                />
-                <p className="text-xs text-muted-foreground">
-                  {bio.length} / {MAX_BIO_LENGTH}
-                </p>
-              </>
-            ) : (
-              <p className="text-muted-foreground">{profile.bio || 'No bio yet'}</p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="location">Location</Label>
-            {isEditing ? (
-              <>
-                <Input
-                  id="location"
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
-                  placeholder="City, State/Country"
-                  maxLength={MAX_LOCATION_LENGTH}
-                />
-                <p className="text-xs text-muted-foreground">
-                  {location.length} / {MAX_LOCATION_LENGTH}
-                </p>
-              </>
-            ) : (
-              <p className="text-muted-foreground">{profile.location || 'Not specified'}</p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label>Favorite Genres</Label>
-            {isEditing ? (
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                {GENRE_OPTIONS.map((genreOption) => (
-                  <div key={JSON.stringify(genreOption.value)} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={JSON.stringify(genreOption.value)}
-                      checked={isGenreSelected(genreOption.value)}
-                      onCheckedChange={() => handleGenreToggle(genreOption.value)}
-                    />
-                    <Label
-                      htmlFor={JSON.stringify(genreOption.value)}
-                      className="cursor-pointer text-sm font-normal"
-                    >
-                      {genreOption.label}
-                    </Label>
-                  </div>
-                ))}
-              </div>
-            ) : (
+            <div className="space-y-2">
+              <Label>Favorite Genres</Label>
               <div className="flex flex-wrap gap-2">
-                {profile.favoriteGenres.length > 0 ? (
-                  profile.favoriteGenres.map((genre, idx) => (
-                    <span
-                      key={idx}
-                      className="rounded-full bg-primary/10 px-3 py-1 text-sm text-primary"
+                {GENRE_OPTIONS.map((genre) => {
+                  const genreKey = genre.value.__kind__;
+                  return (
+                    <Button
+                      key={genreKey}
+                      type="button"
+                      variant={
+                        selectedGenres.includes(genreKey)
+                          ? 'default'
+                          : 'outline'
+                      }
+                      size="sm"
+                      onClick={() => handleGenreToggle(genreKey)}
                     >
-                      {getGenreLabel(genre)}
-                    </span>
-                  ))
-                ) : (
-                  <p className="text-muted-foreground">No genres selected</p>
-                )}
+                      {genre.label}
+                    </Button>
+                  );
+                })}
               </div>
-            )}
-          </div>
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="favoriteBands">Favorite Bands (one per line)</Label>
-            {isEditing ? (
-              <>
-                <Textarea
-                  id="favoriteBands"
-                  value={favoriteBands}
-                  onChange={(e) => setFavoriteBands(e.target.value)}
-                  rows={5}
-                  placeholder="Metallica&#10;Iron Maiden&#10;Black Sabbath"
-                  className="resize-none font-mono text-sm"
-                />
-                <p className="text-xs text-muted-foreground">
-                  {favoriteBands.split('\n').filter((b) => b.trim().length > 0).length} /{' '}
-                  {MAX_FAVORITE_BANDS} bands
-                </p>
-              </>
-            ) : (
-              <div className="space-y-1">
-                {profile.favoriteBands.length > 0 ? (
-                  profile.favoriteBands.map((band, idx) => (
-                    <p key={idx} className="text-muted-foreground">
-                      • {band}
-                    </p>
-                  ))
-                ) : (
-                  <p className="text-muted-foreground">No bands listed</p>
-                )}
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+            <div className="space-y-2">
+              <Label htmlFor="favoriteBands">
+                Favorite Bands (comma-separated)
+              </Label>
+              <Textarea
+                id="favoriteBands"
+                value={favoriteBands}
+                onChange={(e) => setFavoriteBands(e.target.value)}
+                placeholder="Metallica, Iron Maiden, Black Sabbath"
+                rows={3}
+              />
+            </div>
+
+            <Button
+              onClick={handleSave}
+              disabled={updateProfile.isPending || !!displayNameError}
+              className="w-full"
+            >
+              {updateProfile.isPending ? 'Saving...' : 'Save Profile'}
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+
+      <ClearFavoriteBandsConfirmDialog
+        open={showClearBandsDialog}
+        onOpenChange={setShowClearBandsDialog}
+        onConfirm={handleConfirmClearBands}
+        bandCount={currentBandCount}
+      />
+    </>
   );
 }

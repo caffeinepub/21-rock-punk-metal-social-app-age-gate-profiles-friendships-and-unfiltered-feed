@@ -35,7 +35,7 @@ function RequestCard({ request }: { request: FriendRequest }) {
           </Avatar>
 
           <div className="flex-1 min-w-0">
-            <p className="font-bold">{profile?.displayName || 'Anonymous'}</p>
+            <p className="font-bold">{profile?.displayName || 'User'}</p>
             <p className="text-sm text-muted-foreground">wants to connect</p>
           </div>
 

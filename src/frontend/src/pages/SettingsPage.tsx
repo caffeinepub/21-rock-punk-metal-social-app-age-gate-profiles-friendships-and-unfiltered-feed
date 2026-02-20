@@ -2,14 +2,20 @@ import { useInternetIdentity } from '../hooks/useInternetIdentity';
 import { useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { LogOut, Info, Globe } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { LogOut, Info, Globe, Share2, Copy, AlertTriangle, Trash2, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
 import { getBuildInfo, formatBuildInfo } from '../utils/buildInfo';
+import { useState } from 'react';
+import { PublishToGooglePlaySection } from '../components/settings/PublishToGooglePlaySection';
 
 export default function SettingsPage() {
   const { clear } = useInternetIdentity();
   const queryClient = useQueryClient();
   const buildInfo = getBuildInfo();
+  const [showManualCopy, setShowManualCopy] = useState(false);
+  const [showDeleteUrlCopy, setShowDeleteUrlCopy] = useState(false);
 
   const handleSignOut = async () => {
     try {
@@ -20,6 +26,46 @@ export default function SettingsPage() {
       console.error('Sign out error:', error);
       toast.error('Failed to sign out');
     }
+  };
+
+  const handleCopyLink = async () => {
+    const appUrl = window.location.origin;
+
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(appUrl);
+        toast.success('App link copied to clipboard');
+        setShowManualCopy(false);
+      } else {
+        throw new Error('Clipboard API not available');
+      }
+    } catch (error) {
+      console.error('Copy error:', error);
+      toast.error('Failed to copy link automatically');
+      setShowManualCopy(true);
+    }
+  };
+
+  const handleCopyDeleteUrl = async () => {
+    const deleteUrl = `${window.location.origin}/delete-account`;
+
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(deleteUrl);
+        toast.success('Delete account URL copied to clipboard');
+        setShowDeleteUrlCopy(false);
+      } else {
+        throw new Error('Clipboard API not available');
+      }
+    } catch (error) {
+      console.error('Copy error:', error);
+      toast.error('Failed to copy URL automatically');
+      setShowDeleteUrlCopy(true);
+    }
+  };
+
+  const handleNavigateToDeleteAccount = () => {
+    window.location.href = '/delete-account';
   };
 
   return (
@@ -34,13 +80,104 @@ export default function SettingsPage() {
           <CardTitle>Account</CardTitle>
           <CardDescription>Manage your authentication and session</CardDescription>
         </CardHeader>
-        <CardContent>
-          <Button variant="destructive" onClick={handleSignOut}>
-            <LogOut className="mr-2 h-4 w-4" />
-            Sign Out
-          </Button>
+        <CardContent className="space-y-4">
+          <div>
+            <Button variant="destructive" onClick={handleSignOut}>
+              <LogOut className="mr-2 h-4 w-4" />
+              Sign Out
+            </Button>
+          </div>
+
+          <div className="pt-4 border-t space-y-3">
+            <div>
+              <h3 className="text-sm font-semibold mb-1 flex items-center gap-2">
+                <Trash2 className="h-4 w-4" />
+                Delete Account
+              </h3>
+              <p className="text-sm text-muted-foreground mb-3">
+                Permanently delete your account and all associated data
+              </p>
+              <Button
+                variant="outline"
+                onClick={handleNavigateToDeleteAccount}
+              >
+                <ExternalLink className="mr-2 h-4 w-4" />
+                Go to account deletion
+              </Button>
+            </div>
+
+            <div className="pt-3 border-t">
+              <p className="text-sm text-muted-foreground mb-2">
+                Delete account URL (for Google Play submission):
+              </p>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleCopyDeleteUrl}
+                >
+                  <Copy className="mr-2 h-4 w-4" />
+                  Copy URL
+                </Button>
+              </div>
+              {showDeleteUrlCopy && (
+                <div className="mt-2">
+                  <Input
+                    readOnly
+                    value={`${window.location.origin}/delete-account`}
+                    className="font-mono text-sm"
+                    onClick={(e) => e.currentTarget.select()}
+                  />
+                </div>
+              )}
+            </div>
+          </div>
         </CardContent>
       </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Share2 className="h-5 w-5" />
+            Invite Friends
+          </CardTitle>
+          <CardDescription>Share this app with your friends</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Alert variant="destructive">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>Important: Messenger Compatibility</AlertTitle>
+            <AlertDescription className="text-sm mt-2">
+              If your friends see "Connection closed" when opening the link in Facebook Messenger, 
+              tell them to tap the menu (⋯) and choose <strong>"Open in browser"</strong> or 
+              <strong>"Open in Chrome/Safari"</strong>. The app requires a regular browser to log in.
+            </AlertDescription>
+          </Alert>
+
+          <p className="text-sm text-muted-foreground">
+            Copy the app link and share it with anyone you'd like to invite.
+          </p>
+          <Button onClick={handleCopyLink}>
+            <Copy className="mr-2 h-4 w-4" />
+            Copy app link
+          </Button>
+          {showManualCopy && (
+            <div className="space-y-2">
+              <p className="text-sm text-muted-foreground">
+                Copy the link manually:
+              </p>
+              <Input
+                readOnly
+                value={window.location.origin}
+                className="font-mono text-sm"
+                onClick={(e) => e.currentTarget.select()}
+              />
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <PublishToGooglePlaySection />
 
       <Card>
         <CardHeader>

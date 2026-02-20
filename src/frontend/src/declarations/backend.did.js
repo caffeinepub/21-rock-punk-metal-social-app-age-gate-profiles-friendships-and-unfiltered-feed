@@ -61,8 +61,11 @@ export const Report = IDL.Record({
 export const idlService = IDL.Service({
   '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
   'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
+  'blockUser' : IDL.Func([IDL.Principal], [], []),
   'createPost' : IDL.Func([IDL.Text], [IDL.Nat], []),
+  'deleteOwnAccount' : IDL.Func([], [], []),
   'deletePost' : IDL.Func([IDL.Nat], [], []),
+  'getBlockedUsers' : IDL.Func([], [IDL.Vec(IDL.Principal)], ['query']),
   'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
   'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
   'getFeed' : IDL.Func([], [IDL.Vec(FeedPost)], ['query']),
@@ -80,6 +83,7 @@ export const idlService = IDL.Service({
       ['query'],
     ),
   'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
+  'isUserBlocked' : IDL.Func([IDL.Principal], [IDL.Bool], ['query']),
   'likePost' : IDL.Func([IDL.Nat], [], []),
   'reportContent' : IDL.Func(
       [IDL.Opt(IDL.Principal), IDL.Opt(IDL.Nat), IDL.Text],
@@ -89,6 +93,7 @@ export const idlService = IDL.Service({
   'respondToFriendRequest' : IDL.Func([IDL.Principal, IDL.Bool], [], []),
   'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
   'sendFriendRequest' : IDL.Func([IDL.Principal], [], []),
+  'unblockUser' : IDL.Func([IDL.Principal], [], []),
   'updateProfile' : IDL.Func([UserProfile], [], []),
   'verifyAgeAndCreateProfile' : IDL.Func([UserProfile], [], []),
 });
@@ -149,8 +154,11 @@ export const idlFactory = ({ IDL }) => {
   return IDL.Service({
     '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
     'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
+    'blockUser' : IDL.Func([IDL.Principal], [], []),
     'createPost' : IDL.Func([IDL.Text], [IDL.Nat], []),
+    'deleteOwnAccount' : IDL.Func([], [], []),
     'deletePost' : IDL.Func([IDL.Nat], [], []),
+    'getBlockedUsers' : IDL.Func([], [IDL.Vec(IDL.Principal)], ['query']),
     'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
     'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
     'getFeed' : IDL.Func([], [IDL.Vec(FeedPost)], ['query']),
@@ -172,6 +180,7 @@ export const idlFactory = ({ IDL }) => {
         ['query'],
       ),
     'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
+    'isUserBlocked' : IDL.Func([IDL.Principal], [IDL.Bool], ['query']),
     'likePost' : IDL.Func([IDL.Nat], [], []),
     'reportContent' : IDL.Func(
         [IDL.Opt(IDL.Principal), IDL.Opt(IDL.Nat), IDL.Text],
@@ -181,6 +190,7 @@ export const idlFactory = ({ IDL }) => {
     'respondToFriendRequest' : IDL.Func([IDL.Principal, IDL.Bool], [], []),
     'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
     'sendFriendRequest' : IDL.Func([IDL.Principal], [], []),
+    'unblockUser' : IDL.Func([IDL.Principal], [], []),
     'updateProfile' : IDL.Func([UserProfile], [], []),
     'verifyAgeAndCreateProfile' : IDL.Func([UserProfile], [], []),
   });

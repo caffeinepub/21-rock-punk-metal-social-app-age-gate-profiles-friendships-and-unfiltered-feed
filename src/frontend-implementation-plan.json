@@ -1,59 +1,98 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Custom-domain rules explanation + display-name validation (frontend)",
+  "title": "Frontend Gateway Fallback & Network Resilience",
   "requirements": [
     {
-      "id": "REQ-15",
-      "summary": "Add an in-app English explanation of the optional custom-domain prompt and its 5–50 char slug rules with valid/invalid examples.",
+      "id": "REQ-1",
+      "summary": "Implement automatic gateway fallback mechanism for failed canister requests",
       "acceptanceCriteria": [
-        "A user can find a short English explanation in the app UI clarifying what the custom domain prompt means and that it is optional.",
-        "The explanation explicitly states the 5–50 character rule and the allowed character set: letters, numbers, and hyphens only.",
-        "The explanation includes at least one valid example domain slug (e.g., \"rock-punk-metal-social-app\") and at least one invalid example (e.g., one containing '+').",
-        "All user-facing text is in English."
+        "When a canister request fails with gateway resolution errors, the system automatically retries using the raw.icp0.io gateway",
+        "Users see a loading state during retry attempts",
+        "Failed requests are logged for debugging",
+        "Successful retry displays content without requiring manual URL changes"
       ],
       "file_operations": [
         {
-          "path": "frontend/src/pages/SettingsPage.tsx",
+          "path": "frontend/src/hooks/useActor.ts",
           "operation": "modify",
-          "description": "Add a new Settings section/card that explains the platform’s custom-domain prompt, clearly states it is optional, lists the exact slug rules (5–50 chars; letters/numbers/hyphens only; no spaces or punctuation like '+', '/', commas), and provides at least one valid and one invalid example in English."
+          "description": "Add gateway fallback logic to the actor creation flow. When the primary gateway fails with 'Canister ID not resolved' or similar errors, automatically retry the request using raw.icp0.io as an alternative gateway URL. Include error detection logic, retry state management, and logging for debugging. Ensure the fallback mechanism integrates with the existing Internet Identity flow without breaking authentication."
         },
         {
-          "path": "frontend/src/components/layout/AppShell.tsx",
+          "path": "frontend/src/utils/gatewayFallback.ts",
+          "operation": "create",
+          "description": "Create utility functions for gateway fallback handling including: detecting gateway resolution errors from error messages, building alternative gateway URLs (raw.icp0.io), managing retry attempts with exponential backoff, and logging failed requests for debugging. Export a reusable retry wrapper that can be used by the actor hook."
+        },
+        {
+          "path": "frontend/src/hooks/useQueries.ts",
           "operation": "modify",
-          "description": "Wire discoverability by adding a small helper text/link-like hint in the Settings navigation area or Settings header context (within existing Settings page flow) to help users find the new custom-domain explanation section without adding new routes."
+          "description": "Integrate gateway fallback retry logic into query error handling. When queries fail due to gateway issues, trigger the fallback mechanism before marking the query as failed. Ensure loading states are preserved during retry attempts and that successful retries update the query cache correctly."
         }
       ]
     },
     {
-      "id": "REQ-17",
-      "summary": "Add matching frontend display-name validation (5–50 chars; letters/numbers/hyphens only) on Age Verification and Profile edit screens with inline guidance and blocked submission.",
+      "id": "REQ-2",
+      "summary": "Add network status indicator with gateway connectivity monitoring and manual retry",
       "acceptanceCriteria": [
-        "On Age Verification, entering an invalid display name (too short/too long/invalid characters) blocks submission and shows an English error message describing the rule.",
-        "On Profile edit, entering an invalid display name blocks Save and shows an English error message describing the rule.",
-        "The input helper text (or equivalent) states the rule: 5–50 characters; letters, numbers, and hyphens only.",
-        "Frontend validation messages do not expose stack traces or internal details."
+        "Status indicator shows green when gateway is responding normally",
+        "Status indicator shows yellow/warning when using fallback gateway",
+        "Status indicator shows red when gateway requests are failing",
+        "Manual retry button allows users to force a connection attempt",
+        "Indicator is visible but unobtrusive in the app layout"
       ],
       "file_operations": [
         {
-          "path": "frontend/src/utils/validation.ts",
+          "path": "frontend/src/components/system/NetworkStatusIndicator.tsx",
           "operation": "create",
-          "description": "Create shared validation helpers for display names (length 5–50 inclusive; allowed characters A–Z, a–z, 0–9, hyphen), returning a boolean and a clear English error string suitable for inline form messaging."
+          "description": "Create a network status indicator component that displays gateway connectivity state using color-coded visual feedback (green for normal, yellow for fallback, red for failures). Include a manual retry button that forces a connection attempt. Use React Query's network status and custom gateway state to determine the indicator color. Position the indicator in a visible but unobtrusive location (e.g., top-right corner with a small badge/icon)."
         },
         {
-          "path": "frontend/src/pages/AgeVerificationPage.tsx",
-          "operation": "modify",
-          "description": "Use the shared validation helper to validate displayName on change/submit; add inline helper text stating the rule and an inline English error message when invalid; prevent submission by disabling the Continue button and by guarding in handleSubmit when the value is invalid (do not rely on backend errors)."
+          "path": "frontend/src/hooks/useGatewayStatus.ts",
+          "operation": "create",
+          "description": "Create a custom hook that tracks gateway connectivity status by monitoring actor creation attempts, query failures, and fallback usage. Export gateway state (normal, fallback, failed), retry count, last error timestamp, and a manual retry function. Use React context or a simple state manager to share status across the app."
         },
         {
-          "path": "frontend/src/pages/ProfilePage.tsx",
+          "path": "frontend/src/components/layout/AppShell.tsx",
           "operation": "modify",
-          "description": "Use the shared validation helper when editing displayName; add inline helper text stating the rule and an inline English error message; block Save when invalid by disabling the Save action and guarding handleSave; ensure errors remain user-friendly and do not reveal stack traces or internal details."
+          "description": "Wire the NetworkStatusIndicator component into the app header/shell layout. Position it in the top navigation area where it's visible but doesn't interfere with existing navigation elements. Ensure it appears on all authenticated pages."
         },
         {
-          "path": "frontend/src/utils/backendErrors.ts",
+          "path": "frontend/src/App.tsx",
           "operation": "modify",
-          "description": "Extend backend error normalization to map any backend display-name invalid-character / length-range messages into short, clear English messages consistent with the new 5–50 and letters/numbers/hyphens-only rule (keeping existing sanitization behavior)."
+          "description": "Add gateway status context provider to wrap the app, making the status hook available throughout the component tree. Integrate with existing Internet Identity and React Query providers."
+        }
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "summary": "Implement cache clearing suggestion modal for persistent gateway errors",
+      "acceptanceCriteria": [
+        "After 3 consecutive gateway failures, show a helpful modal with cache clearing instructions",
+        "Instructions are device-specific (Android tablet, phone, desktop)",
+        "Modal includes options to try alternative gateway or switch networks",
+        "Users can dismiss the modal and continue attempting",
+        "Modal does not appear more than once per session"
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/system/CacheClearingModal.tsx",
+          "operation": "create",
+          "description": "Create a modal component that displays device-specific cache clearing instructions when persistent gateway errors are detected. Include step-by-step instructions for Android tablets, phones, and desktop browsers. Add action buttons for trying the alternative gateway and dismissing the modal. Track modal display in sessionStorage to prevent showing more than once per session."
+        },
+        {
+          "path": "frontend/src/utils/deviceDetection.ts",
+          "operation": "create",
+          "description": "Create utility functions to detect the user's device type (Android tablet, Android phone, iOS, desktop) and browser. Export a function that returns device-specific cache clearing instructions with clear steps for each platform. Include detection for common browsers (Chrome, Firefox, Safari, Edge)."
+        },
+        {
+          "path": "frontend/src/hooks/useGatewayStatus.ts",
+          "operation": "modify",
+          "description": "Add consecutive failure tracking to the gateway status hook. When failures reach the threshold (3 consecutive failures), trigger the cache clearing modal. Track modal display state in sessionStorage to prevent repeated displays. Reset failure count on successful requests."
+        },
+        {
+          "path": "frontend/src/App.tsx",
+          "operation": "modify",
+          "description": "Wire the CacheClearingModal component into the root app component, controlled by the gateway status hook. Ensure the modal appears above other UI elements when triggered and doesn't block critical functionality."
         }
       ]
     }

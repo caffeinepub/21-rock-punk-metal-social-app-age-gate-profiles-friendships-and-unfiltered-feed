@@ -1,60 +1,85 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useActor } from './useActor';
-import { useInternetIdentity } from './useInternetIdentity';
-import type { UserProfile, FeedPost, FriendRequest, Genre } from '../backend';
-import { Principal } from '@dfinity/principal';
+import type {
+  UserProfile,
+  FeedPost,
+  FriendRequest,
+  Report,
+} from '../backend';
+import { Principal } from '@icp-sdk/core/principal';
 import { normalizeBackendError } from '../utils/backendErrors';
+import { useGatewayStatus } from './useGatewayStatus';
+import { isGatewayResolutionError } from '../utils/gatewayFallback';
 
-// User Profile Queries
-export function useGetCallerUserProfile() {
-  const { actor, isFetching: actorFetching } = useActor();
+export function useGetCallerProfile() {
+  const { actor, isFetching } = useActor();
+  const { recordSuccess, recordFailure } = useGatewayStatus();
 
   const query = useQuery<UserProfile | null>({
     queryKey: ['currentUserProfile'],
     queryFn: async () => {
       if (!actor) throw new Error('Actor not available');
-      return actor.getCallerUserProfile();
+      try {
+        const result = await actor.getCallerUserProfile();
+        recordSuccess();
+        return result;
+      } catch (error) {
+        if (isGatewayResolutionError(error)) {
+          recordFailure(error);
+        }
+        throw error;
+      }
     },
-    enabled: !!actor && !actorFetching,
+    enabled: !!actor && !isFetching,
     retry: false,
   });
 
   return {
     ...query,
-    isLoading: actorFetching || query.isLoading,
+    isLoading: isFetching || query.isLoading,
     isFetched: !!actor && query.isFetched,
   };
-}
-
-export function useGetProfile(userPrincipal: string | null) {
-  const { actor, isFetching } = useActor();
-
-  return useQuery<UserProfile | null>({
-    queryKey: ['userProfile', userPrincipal],
-    queryFn: async () => {
-      if (!actor || !userPrincipal) return null;
-      try {
-        const principal = Principal.fromText(userPrincipal);
-        return await actor.getUserProfile(principal);
-      } catch (error) {
-        console.error('Error fetching profile:', error);
-        return null;
-      }
-    },
-    enabled: !!actor && !isFetching && !!userPrincipal,
-  });
 }
 
 export function useVerifyAgeAndCreateProfile() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
+  const { recordSuccess, recordFailure } = useGatewayStatus();
 
   return useMutation({
     mutationFn: async (profile: UserProfile) => {
       if (!actor) throw new Error('Actor not available');
       try {
         await actor.verifyAgeAndCreateProfile(profile);
+        recordSuccess();
       } catch (error) {
+        if (isGatewayResolutionError(error)) {
+          recordFailure(error);
+        }
+        throw normalizeBackendError(error);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['currentUserProfile'] });
+    },
+  });
+}
+
+export function useSaveProfile() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+  const { recordSuccess, recordFailure } = useGatewayStatus();
+
+  return useMutation({
+    mutationFn: async (profile: UserProfile) => {
+      if (!actor) throw new Error('Actor not available');
+      try {
+        await actor.saveCallerUserProfile(profile);
+        recordSuccess();
+      } catch (error) {
+        if (isGatewayResolutionError(error)) {
+          recordFailure(error);
+        }
         throw normalizeBackendError(error);
       }
     },
@@ -67,13 +92,18 @@ export function useVerifyAgeAndCreateProfile() {
 export function useUpdateProfile() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
+  const { recordSuccess, recordFailure } = useGatewayStatus();
 
   return useMutation({
     mutationFn: async (profile: UserProfile) => {
       if (!actor) throw new Error('Actor not available');
       try {
         await actor.updateProfile(profile);
+        recordSuccess();
       } catch (error) {
+        if (isGatewayResolutionError(error)) {
+          recordFailure(error);
+        }
         throw normalizeBackendError(error);
       }
     },
@@ -83,15 +113,57 @@ export function useUpdateProfile() {
   });
 }
 
-// Feed Queries
+export function useGetProfile(principalString: string) {
+  const { actor, isFetching } = useActor();
+  const { recordSuccess, recordFailure } = useGatewayStatus();
+
+  return useQuery<UserProfile | null>({
+    queryKey: ['profile', principalString],
+    queryFn: async () => {
+      if (!actor) throw new Error('Actor not available');
+      try {
+        const principal = Principal.fromText(principalString);
+        const result = await actor.getUserProfile(principal);
+        recordSuccess();
+        return result;
+      } catch (error) {
+        if (isGatewayResolutionError(error)) {
+          recordFailure(error);
+        }
+        // If blocked or unauthorized, return null instead of throwing
+        const normalized = normalizeBackendError(error);
+        if (
+          normalized.message.includes('blocked') ||
+          normalized.message.includes('permission')
+        ) {
+          return null;
+        }
+        throw normalized;
+      }
+    },
+    enabled: !!actor && !isFetching && !!principalString,
+    retry: false,
+  });
+}
+
 export function useGetFeed() {
   const { actor, isFetching } = useActor();
+  const { recordSuccess, recordFailure } = useGatewayStatus();
 
   return useQuery<FeedPost[]>({
     queryKey: ['feed'],
     queryFn: async () => {
-      if (!actor) return [];
-      return actor.getFeed();
+      if (!actor) throw new Error('Actor not available');
+      try {
+        const result = await actor.getFeed();
+        recordSuccess();
+        return result;
+      } catch (error) {
+        if (isGatewayResolutionError(error)) {
+          recordFailure(error);
+        }
+        throw error;
+      }
     },
     enabled: !!actor && !isFetching,
   });
@@ -100,13 +172,19 @@ export function useGetFeed() {
 export function useCreatePost() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
+  const { recordSuccess, recordFailure } = useGatewayStatus();
 
   return useMutation({
     mutationFn: async (content: string) => {
       if (!actor) throw new Error('Actor not available');
       try {
-        return await actor.createPost(content);
+        const result = await actor.createPost(content);
+        recordSuccess();
+        return result;
       } catch (error) {
+        if (isGatewayResolutionError(error)) {
+          recordFailure(error);
+        }
         throw normalizeBackendError(error);
       }
     },
@@ -119,13 +197,18 @@ export function useCreatePost() {
 export function useLikePost() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
+  const { recordSuccess, recordFailure } = useGatewayStatus();
 
   return useMutation({
     mutationFn: async (postId: bigint) => {
       if (!actor) throw new Error('Actor not available');
       try {
         await actor.likePost(postId);
+        recordSuccess();
       } catch (error) {
+        if (isGatewayResolutionError(error)) {
+          recordFailure(error);
+        }
         throw normalizeBackendError(error);
       }
     },
@@ -138,13 +221,18 @@ export function useLikePost() {
 export function useDeletePost() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
+  const { recordSuccess, recordFailure } = useGatewayStatus();
 
   return useMutation({
     mutationFn: async (postId: bigint) => {
       if (!actor) throw new Error('Actor not available');
       try {
         await actor.deletePost(postId);
+        recordSuccess();
       } catch (error) {
+        if (isGatewayResolutionError(error)) {
+          recordFailure(error);
+        }
         throw normalizeBackendError(error);
       }
     },
@@ -154,30 +242,48 @@ export function useDeletePost() {
   });
 }
 
-// Friends Queries
-export function useGetFriends() {
+export function useGetFriends(principalString: string) {
   const { actor, isFetching } = useActor();
-  const { identity } = useInternetIdentity();
+  const { recordSuccess, recordFailure } = useGatewayStatus();
 
   return useQuery<Principal[]>({
-    queryKey: ['friends'],
+    queryKey: ['friends', principalString],
     queryFn: async () => {
-      if (!actor || !identity) return [];
-      const principal = identity.getPrincipal();
-      return actor.getFriends(principal);
+      if (!actor) throw new Error('Actor not available');
+      try {
+        const principal = Principal.fromText(principalString);
+        const result = await actor.getFriends(principal);
+        recordSuccess();
+        return result;
+      } catch (error) {
+        if (isGatewayResolutionError(error)) {
+          recordFailure(error);
+        }
+        throw error;
+      }
     },
-    enabled: !!actor && !isFetching && !!identity,
+    enabled: !!actor && !isFetching && !!principalString,
   });
 }
 
 export function useGetPendingRequests() {
   const { actor, isFetching } = useActor();
+  const { recordSuccess, recordFailure } = useGatewayStatus();
 
   return useQuery<FriendRequest[]>({
     queryKey: ['pendingRequests'],
     queryFn: async () => {
-      if (!actor) return [];
-      return actor.getPendingRequests();
+      if (!actor) throw new Error('Actor not available');
+      try {
+        const result = await actor.getPendingRequests();
+        recordSuccess();
+        return result;
+      } catch (error) {
+        if (isGatewayResolutionError(error)) {
+          recordFailure(error);
+        }
+        throw error;
+      }
     },
     enabled: !!actor && !isFetching,
   });
@@ -186,18 +292,22 @@ export function useGetPendingRequests() {
 export function useSendFriendRequest() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
+  const { recordSuccess, recordFailure } = useGatewayStatus();
 
   return useMutation({
-    mutationFn: async (toPrincipal: Principal) => {
+    mutationFn: async (to: Principal) => {
       if (!actor) throw new Error('Actor not available');
       try {
-        await actor.sendFriendRequest(toPrincipal);
+        await actor.sendFriendRequest(to);
+        recordSuccess();
       } catch (error) {
+        if (isGatewayResolutionError(error)) {
+          recordFailure(error);
+        }
         throw normalizeBackendError(error);
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['friends'] });
       queryClient.invalidateQueries({ queryKey: ['pendingRequests'] });
     },
   });
@@ -206,26 +316,31 @@ export function useSendFriendRequest() {
 export function useRespondToFriendRequest() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
+  const { recordSuccess, recordFailure } = useGatewayStatus();
 
   return useMutation({
     mutationFn: async ({ from, accept }: { from: Principal; accept: boolean }) => {
       if (!actor) throw new Error('Actor not available');
       try {
         await actor.respondToFriendRequest(from, accept);
+        recordSuccess();
       } catch (error) {
+        if (isGatewayResolutionError(error)) {
+          recordFailure(error);
+        }
         throw normalizeBackendError(error);
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['friends'] });
       queryClient.invalidateQueries({ queryKey: ['pendingRequests'] });
+      queryClient.invalidateQueries({ queryKey: ['friends'] });
     },
   });
 }
 
-// Report Mutation
 export function useReportContent() {
   const { actor } = useActor();
+  const { recordSuccess, recordFailure } = useGatewayStatus();
 
   return useMutation({
     mutationFn: async ({
@@ -233,14 +348,140 @@ export function useReportContent() {
       reportedPost,
       reason,
     }: {
-      reportedUser: Principal | null;
-      reportedPost: bigint | null;
+      reportedUser?: Principal;
+      reportedPost?: bigint;
       reason: string;
     }) => {
       if (!actor) throw new Error('Actor not available');
       try {
-        await actor.reportContent(reportedUser, reportedPost, reason);
+        await actor.reportContent(
+          reportedUser || null,
+          reportedPost || null,
+          reason
+        );
+        recordSuccess();
       } catch (error) {
+        if (isGatewayResolutionError(error)) {
+          recordFailure(error);
+        }
+        throw normalizeBackendError(error);
+      }
+    },
+  });
+}
+
+export function useBlockUser() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+  const { recordSuccess, recordFailure } = useGatewayStatus();
+
+  return useMutation({
+    mutationFn: async (target: Principal) => {
+      if (!actor) throw new Error('Actor not available');
+      try {
+        await actor.blockUser(target);
+        recordSuccess();
+      } catch (error) {
+        if (isGatewayResolutionError(error)) {
+          recordFailure(error);
+        }
+        throw normalizeBackendError(error);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['blockedUsers'] });
+      queryClient.invalidateQueries({ queryKey: ['feed'] });
+      queryClient.invalidateQueries({ queryKey: ['friends'] });
+      queryClient.invalidateQueries({ queryKey: ['pendingRequests'] });
+    },
+  });
+}
+
+export function useUnblockUser() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+  const { recordSuccess, recordFailure } = useGatewayStatus();
+
+  return useMutation({
+    mutationFn: async (target: Principal) => {
+      if (!actor) throw new Error('Actor not available');
+      try {
+        await actor.unblockUser(target);
+        recordSuccess();
+      } catch (error) {
+        if (isGatewayResolutionError(error)) {
+          recordFailure(error);
+        }
+        throw normalizeBackendError(error);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['blockedUsers'] });
+    },
+  });
+}
+
+export function useGetBlockedUsers() {
+  const { actor, isFetching } = useActor();
+  const { recordSuccess, recordFailure } = useGatewayStatus();
+
+  return useQuery<Principal[]>({
+    queryKey: ['blockedUsers'],
+    queryFn: async () => {
+      if (!actor) throw new Error('Actor not available');
+      try {
+        const result = await actor.getBlockedUsers();
+        recordSuccess();
+        return result;
+      } catch (error) {
+        if (isGatewayResolutionError(error)) {
+          recordFailure(error);
+        }
+        throw error;
+      }
+    },
+    enabled: !!actor && !isFetching,
+  });
+}
+
+export function useIsUserBlocked(target: Principal | null) {
+  const { actor, isFetching } = useActor();
+  const { recordSuccess, recordFailure } = useGatewayStatus();
+
+  return useQuery<boolean>({
+    queryKey: ['isBlocked', target?.toString()],
+    queryFn: async () => {
+      if (!actor || !target) return false;
+      try {
+        const result = await actor.isUserBlocked(target);
+        recordSuccess();
+        return result;
+      } catch (error) {
+        if (isGatewayResolutionError(error)) {
+          recordFailure(error);
+        }
+        console.error('Error checking block status:', error);
+        return false;
+      }
+    },
+    enabled: !!actor && !isFetching && !!target,
+  });
+}
+
+export function useDeleteOwnAccount() {
+  const { actor } = useActor();
+  const { recordSuccess, recordFailure } = useGatewayStatus();
+
+  return useMutation({
+    mutationFn: async () => {
+      if (!actor) throw new Error('Actor not available');
+      try {
+        await actor.deleteOwnAccount();
+        recordSuccess();
+      } catch (error) {
+        if (isGatewayResolutionError(error)) {
+          recordFailure(error);
+        }
         throw normalizeBackendError(error);
       }
     },

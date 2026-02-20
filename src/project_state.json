@@ -1,187 +1,41 @@
 {
   "schemaVersion": "1.0.0",
-  "projectStateVersion": 11,
-  "summary": "Free social app for the rock/punk/metal community (21+), focused on making friends and providing an unfiltered social media space.",
-  "architectural_notes": [
-    "Add security hardening measures: strict authorization checks on all backend methods, input validation, and rate limiting/abuse prevention; consider edge protection (WAF/firewall) depending on hosting/deployment options.",
-    "Custom domain names (if used) must be 5–50 characters and contain only letters, numbers, and hyphens (no +, /, commas, or other special characters)."
-  ],
+  "projectStateVersion": 3,
+  "summary": "New project",
+  "architectural_notes": [],
   "known_issues": [
-    "Draft publish/build attempt failed with error: \"Our AI couldn't handle that request\"; user requested retry publishing.",
-    "Publish flow surfaced a custom-domain validation error: suggested/auto domain contained invalid characters (e.g., \"+\", \"/\", commas); domain must be 5–50 chars and only letters/numbers/hyphens."
+    "ICP gateway intermittently returns 'Canister ID not resolved' errors preventing app access",
+    "Delete-account page URL fails Google Play Console validation due to gateway issues"
   ],
-  "isFixRequest": true,
+  "isFixRequest": false,
   "existing_features": [
     {
-      "id": "feature-implement-internet-identity-sign-in-and-require-authentication-before-accessing-any-app-features",
-      "title": "Implement Internet Identity sign-in and require authentication before accessing any app features.",
+      "id": "feature-implement-a-fallback-mechanism-in-the-frontend-to-automatically-retry-failed-requests-using-alternative-icp-gateway-urls-raw-icp0-io-when-the-primary-gateway-returns-canister-id-not-resolved-errors",
+      "title": "Implement a fallback mechanism in the frontend to automatically retry failed requests using alternative ICP gateway URLs (raw.icp0.io) when the primary gateway returns 'Canister ID not resolved' errors",
       "reqIds": [
         "REQ-1"
       ],
       "version": 1
     },
     {
-      "id": "feature-add-a-21-age-gating-flow-on-first-sign-in-require-the-user-to-attest-they-are-21-or-older-and-store-this-verification-status-block-access-until-verified",
-      "title": "Add a 21+ age-gating flow: on first sign-in, require the user to attest they are 21 or older and store this verification status; block access until verified.",
+      "id": "feature-add-a-network-status-indicator-in-the-app-header-that-detects-and-displays-gateway-connectivity-issues-with-a-manual-retry-button",
+      "title": "Add a network status indicator in the app header that detects and displays gateway connectivity issues, with a manual retry button",
       "reqIds": [
         "REQ-2"
       ],
       "version": 1
     },
     {
-      "id": "feature-create-user-profiles-tailored-to-the-rock-punk-metal-community-including-at-minimum-display-name-avatar-optional-bio-favorite-genres-multi-select-favorite-bands-free-text-list-and-location-text-optional",
-      "title": "Create user profiles tailored to the rock/punk/metal community, including at minimum: display name, avatar (optional), bio, favorite genres (multi-select), favorite bands (free text list), and location text (optional).",
+      "id": "feature-implement-client-side-dns-cache-clearing-mechanism-that-suggests-browser-cache-clearing-steps-when-persistent-gateway-errors-are-detected",
+      "title": "Implement client-side DNS cache clearing mechanism that suggests browser cache clearing steps when persistent gateway errors are detected",
       "reqIds": [
         "REQ-3"
       ],
       "version": 1
-    },
-    {
-      "id": "feature-implement-friendship-connection-features-send-friend-request-accept-decline-view-friends-list-and-view-incoming-outgoing-requests",
-      "title": "Implement friendship/connection features: send friend request, accept/decline, view friends list, and view incoming/outgoing requests.",
-      "reqIds": [
-        "REQ-4"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-implement-an-unfiltered-community-social-feed-where-age-verified-users-can-create-text-posts-view-a-chronological-feed-and-react-with-likes",
-      "title": "Implement an 'unfiltered' community social feed where age-verified users can create text posts, view a chronological feed, and react with likes.",
-      "reqIds": [
-        "REQ-5"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-add-minimal-community-safety-controls-compatible-with-an-unfiltered-space-allow-users-to-delete-their-own-posts-and-allow-a-basic-report-mechanism-report-post-user-with-a-reason-stored-for-review-no-automated-moderation-required",
-      "title": "Add minimal community safety controls compatible with an 'unfiltered' space: allow users to delete their own posts, and allow a basic report mechanism (report post/user with a reason) stored for review (no automated moderation required).",
-      "reqIds": [
-        "REQ-6"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-create-a-coherent-distinct-visual-theme-for-a-rock-punk-metal-community-app-colors-typography-spacing-and-component-styling-and-apply-it-consistently-across-landing-login-profile-friends-and-feed-screens-avoid-blue-purple-as-primary-colors",
-      "title": "Create a coherent, distinct visual theme for a rock/punk/metal community app (colors, typography, spacing, and component styling) and apply it consistently across landing/login, profile, friends, and feed screens (avoid blue/purple as primary colors).",
-      "reqIds": [
-        "REQ-7"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-add-core-navigation-and-pages-for-landing-login-age-verification-feed-profile-self-others-friends-requests-and-settings-sign-out",
-      "title": "Add core navigation and pages for: Landing/Login, Age Verification, Feed, Profile (self + others), Friends/Requests, and Settings (sign out).",
-      "reqIds": [
-        "REQ-8"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-add-generated-static-image-assets-logo-default-avatar-and-a-community-themed-background-to-the-frontend-as-static-files-and-use-them-in-the-ui",
-      "title": "Add generated static image assets (logo, default avatar, and a community-themed background) to the frontend as static files and use them in the UI.",
-      "reqIds": [
-        "REQ-9"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-update-the-frontend-to-handle-backend-security-rejections-gracefully-by-showing-clear-english-error-messages-for-rate-limiting-and-validation-failures-without-exposing-internal-stack-traces",
-      "title": "Update the frontend to handle backend security rejections gracefully by showing clear English error messages for rate limiting and validation failures, without exposing internal stack traces.",
-      "reqIds": [
-        "REQ-12"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-retry-the-publish-operation-by-running-a-clean-build-and-deployment-of-the-current-draft-so-it-becomes-the-live-version-users-can-access",
-      "title": "Retry the publish operation by running a clean build and deployment of the current draft so it becomes the live version users can access.",
-      "reqIds": [
-        "REQ-13"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-if-publishing-fails-again-identify-and-fix-the-underlying-project-level-cause-that-prevents-the-build-publish-pipeline-from-completing-e-g-build-time-typescript-errors-dependency-issues-canister-compilation-errors-then-re-run-publish-until-it-succeeds",
-      "title": "If publishing fails again, identify and fix the underlying project-level cause that prevents the build/publish pipeline from completing (e.g., build-time TypeScript errors, dependency issues, canister compilation errors), then re-run publish until it succeeds.",
-      "reqIds": [
-        "REQ-14"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-add-an-in-app-explanation-of-the-platform-custom-domain-prompt-and-its-naming-rules-making-it-clear-that-a-custom-domain-is-optional-and-that-domain-names-must-be-5-50-characters-and-contain-only-letters-numbers-and-hyphens-no-spaces-commas-or-other-punctuation",
-      "title": "Add an in-app explanation of the platform custom-domain prompt and its naming rules, making it clear that a custom domain is optional and that domain names must be 5–50 characters and contain only letters, numbers, and hyphens (no spaces, '+', '/', commas, or other punctuation).",
-      "reqIds": [
-        "REQ-15"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-add-matching-frontend-validation-for-display-name-on-the-age-verification-profile-creation-screen-and-profile-edit-screen-require-5-50-characters-and-only-letters-numbers-and-hyphens-show-clear-english-inline-guidance-and-prevent-submission-when-invalid",
-      "title": "Add matching frontend validation for display name on the Age Verification (profile creation) screen and Profile edit screen: require 5–50 characters and only letters, numbers, and hyphens; show clear English inline guidance and prevent submission when invalid.",
-      "reqIds": [
-        "REQ-17"
-      ],
-      "version": 1
     }
   ],
-  "new_feature_requests": [
-    {
-      "id": "AR-1",
-      "summary": "Implement 21+ age gating (signup verification/attestation) and restrict access to adults only",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-2",
-      "summary": "User accounts and profiles tailored to rock/punk/metal community (bio, interests, etc.)",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-3",
-      "summary": "Friendship/connection features to help users meet and build friendships",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-4",
-      "summary": "Social feed for posting and engaging with content in an 'unfiltered' community space",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-5",
-      "summary": "Security hardening: protect against unauthorized access/attacks (e.g., stronger authz checks, rate limiting/abuse prevention, and optional firewall/WAF where applicable)",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-6",
-      "summary": "Harden backend authorization and request handling so unauthenticated/unauthorized callers cannot access protected functionality, and ensure all public methods consistently enforce the same authentication + age-verification rules.",
-      "reqIds": [
-        "REQ-10"
-      ],
-      "status": "pending"
-    },
-    {
-      "id": "AR-7",
-      "summary": "Add backend abuse-prevention controls (\"firewall-like\" protections at the canister boundary) by implementing per-caller rate limiting for write operations and enforcing strict payload size/length limits on user-provided text fields.",
-      "reqIds": [
-        "REQ-11"
-      ],
-      "status": "pending"
-    },
-    {
-      "id": "AR-9",
-      "summary": "Enforce display-name validation in the backend so that UserProfile.displayName must be between 5 and 50 characters (inclusive) and may contain only letters (A–Z, a–z), numbers (0–9), and hyphens ('-'). Reject invalid values with a clear English error message.",
-      "reqIds": [
-        "REQ-16"
-      ],
-      "status": "pending"
-    }
-  ],
-  "projectName": "21+ rock/punk/metal social app: age gate, profiles, friendships, and unfiltered feed",
+  "new_feature_requests": [],
+  "projectName": "MetalHead Underground",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

@@ -7,11 +7,15 @@ import Order "mo:core/Order";
 import Iter "mo:core/Iter";
 import Array "mo:core/Array";
 import Runtime "mo:core/Runtime";
-import MixinAuthorization "authorization/MixinAuthorization";
-import AccessControl "authorization/access-control";
 import Nat "mo:core/Nat";
 import Text "mo:core/Text";
 import Char "mo:core/Char";
+
+
+import MixinAuthorization "authorization/MixinAuthorization";
+import AccessControl "authorization/access-control";
+
+// Explicit migration from old to new actor state
 
 actor {
   let accessControlState = AccessControl.initState();
@@ -77,10 +81,8 @@ actor {
   let feedPosts = Map.empty<Nat, FeedPost>();
   let reports = Map.empty<Nat, List.List<Report>>();
   var idCounter = 0;
-
-  // Rate limiting parameters
-  let maxRequestsPerUser = 10;
-  let rateLimitWindow = 60_000_000_000; // 60 seconds in nanoseconds
+  var maxRequestsPerUser = 10;
+  let rateLimitWindow : Int = 60_000_000_000;
 
   type RateLimitEntry = {
     timestamp : Int;
@@ -89,25 +91,36 @@ actor {
 
   let rateLimitMap = Map.empty<Principal, RateLimitEntry>();
 
-  // Payload size limits
   let maxDisplayNameLength = 50;
-  let minDisplayNameLength = 5;
-  let maxBioLength = 200;
-  let maxPostContentLength = 500;
-  let maxReasonLength = 200;
-  let maxGenreTextLength = 50;
+  let minDisplayNameLength = 4;
+  let maxBioLength = 500;
+  let maxPostContentLength = 420;
+  let maxReasonLength = 500;
+  let maxGenreTextLength = 100;
   let maxBandNameLength = 100;
-  let maxLocationLength = 100;
-  let maxAvatarUrlLength = 500;
+  let maxLocationLength = 150;
+  let maxAvatarUrlLength = 300;
   let maxFavoriteGenres = 10;
-  let maxFavoriteBands = 20;
+  let maxFavoriteBands = 50;
 
-  // Helper function to check if user is age-verified
   func isAgeVerified(user : Principal) : Bool {
     switch (userProfiles.get(user)) {
       case (null) { false };
       case (?profile) { profile.isAgeVerified };
     };
+  };
+
+  let userBlocks = Map.empty<Principal, List.List<Principal>>();
+
+  func isUserBlockedBy(blocker : Principal, target : Principal) : Bool {
+    switch (userBlocks.get(blocker)) {
+      case (null) { false };
+      case (?blockList) { blockList.any(func(b) { b == target }) };
+    };
+  };
+
+  func areUsersMutuallyBlockedInternal(user1 : Principal, user2 : Principal) : Bool {
+    isUserBlockedBy(user1, user2) or isUserBlockedBy(user2, user1);
   };
 
   func checkRequestLimit(caller : Principal) {
@@ -145,14 +158,13 @@ actor {
 
   func validateDisplayName(name : Text) {
     if (name.size() < minDisplayNameLength or name.size() > maxDisplayNameLength) {
-      Runtime.trap("Display name must be between " # minDisplayNameLength.toText() # " and " # maxDisplayNameLength.toText() # " characters");
+      Runtime.trap(
+        "Display name must be between " # minDisplayNameLength.toText() # " and " # maxDisplayNameLength.toText() # " characters"
+      );
     };
 
     for (char in name.chars()) {
-      let valid = char >= 'a' and char <= 'z' or
-        char >= 'A' and char <= 'Z' or
-        char >= '0' and char <= '9' or
-        char == '-';
+      let valid = char >= 'a' and char <= 'z' or char >= 'A' and char <= 'Z' or char >= '0' and char <= '9' or char == '-';
 
       if (not valid) {
         Runtime.trap("Display name contains invalid character: '" # Text.fromChar(char) # "'. Allowed characters: letters, numbers, hyphens ('-')");
@@ -205,7 +217,6 @@ actor {
     };
   };
 
-  // User Profile Management
   public shared ({ caller }) func verifyAgeAndCreateProfile(profile : UserProfile) : async () {
     checkRequestLimit(caller);
 
@@ -239,9 +250,8 @@ actor {
 
     validateProfile(profile);
 
-    // Preserve age verification status
-    let finalProfile = { profile with isAgeVerified = true };
-    userProfiles.add(caller, finalProfile);
+    let updatedProfile = { profile with isAgeVerified = true };
+    userProfiles.add(caller, updatedProfile);
   };
 
   public query ({ caller }) func getCallerUserProfile() : async ?UserProfile {
@@ -267,9 +277,7 @@ actor {
     switch (userProfiles.get(caller)) {
       case (null) { Runtime.trap("Profile does not exist") };
       case (?existingProfile) {
-        let updatedProfile = {
-          profile with isAgeVerified = existingProfile.isAgeVerified
-        };
+        let updatedProfile = { profile with isAgeVerified = existingProfile.isAgeVerified };
         userProfiles.add(caller, updatedProfile);
       };
     };
@@ -284,13 +292,21 @@ actor {
       Runtime.trap("Unauthorized: Age verification required");
     };
 
+    // Block check: prevent viewing profiles of blocked users (bidirectional)
+    if (caller != user and not AccessControl.isAdmin(accessControlState, caller)) {
+      if (areUsersMutuallyBlockedInternal(caller, user)) {
+        Runtime.trap("Cannot view profile: user is blocked");
+      };
+    };
+
+    // Ownership check: can only view own profile unless admin
     if (caller != user and not AccessControl.isAdmin(accessControlState, caller)) {
       Runtime.trap("Unauthorized: Can only view your own profile");
     };
+
     userProfiles.get(user);
   };
 
-  // Friendship Management
   public shared ({ caller }) func sendFriendRequest(to : Principal) : async () {
     checkRequestLimit(caller);
 
@@ -310,6 +326,10 @@ actor {
       Runtime.trap("Cannot send friend request to yourself");
     };
 
+    if (areUsersMutuallyBlockedInternal(caller, to)) {
+      Runtime.trap("Cannot send friend request: user is blocked");
+    };
+
     let request : FriendRequest = {
       from = caller;
       to;
@@ -317,7 +337,6 @@ actor {
       timestamp = Time.now();
     };
 
-    // Add to sender's outgoing requests
     let outgoingRequests = switch (friendRequests.get(caller)) {
       case (null) { List.empty<FriendRequest>() };
       case (?list) { list };
@@ -325,7 +344,6 @@ actor {
     outgoingRequests.add(request);
     friendRequests.add(caller, outgoingRequests);
 
-    // Add to recipient's incoming requests
     let incomingRequests = switch (friendRequests.get(to)) {
       case (null) { List.empty<FriendRequest>() };
       case (?list) { list };
@@ -345,6 +363,10 @@ actor {
       Runtime.trap("Unauthorized: Age verification required");
     };
 
+    if (areUsersMutuallyBlockedInternal(caller, from)) {
+      Runtime.trap("Cannot respond to friend request: user is blocked");
+    };
+
     switch (friendRequests.get(caller)) {
       case (null) { Runtime.trap("No friend requests found") };
       case (?requestsList) {
@@ -360,7 +382,6 @@ actor {
         friendRequests.add(caller, List.fromArray<FriendRequest>(updatedRequests));
 
         if (accept) {
-          // Add to friends list
           let callerFriends = switch (friends.get(caller)) {
             case (null) { List.empty<Principal>() };
             case (?list) { list };
@@ -388,13 +409,26 @@ actor {
       Runtime.trap("Unauthorized: Age verification required");
     };
 
+    // Block check: prevent viewing friend list of blocked users
+    if (caller != user and not AccessControl.isAdmin(accessControlState, caller)) {
+      if (areUsersMutuallyBlockedInternal(caller, user)) {
+        Runtime.trap("Cannot view friends: user is blocked");
+      };
+    };
+
     if (caller != user and not AccessControl.isAdmin(accessControlState, caller)) {
       Runtime.trap("Unauthorized: Can only view your own friends list");
     };
 
     switch (friends.get(user)) {
       case (null) { [] };
-      case (?list) { list.toArray() };
+      case (?list) {
+        list.toArray().filter(
+          func(friend) {
+            not areUsersMutuallyBlockedInternal(caller, friend);
+          }
+        );
+      };
     };
   };
 
@@ -412,14 +446,13 @@ actor {
       case (?list) {
         list.toArray().filter<FriendRequest>(
           func(request) {
-            (request.to == caller and request.status == #pending);
+            (request.to == caller and request.status == #pending and not areUsersMutuallyBlockedInternal(caller, request.from));
           }
         );
       };
     };
   };
 
-  // Community Feed
   public shared ({ caller }) func createPost(content : Text) : async Nat {
     checkRequestLimit(caller);
 
@@ -468,7 +501,10 @@ actor {
     switch (feedPosts.get(postId)) {
       case (null) { Runtime.trap("Post does not exist") };
       case (?post) {
-        // Check if already liked
+        if (areUsersMutuallyBlockedInternal(caller, post.author)) {
+          Runtime.trap("Cannot like post: user is blocked");
+        };
+
         let alreadyLiked = post.likes.find(
           func(p) { p == caller }
         );
@@ -494,7 +530,11 @@ actor {
       Runtime.trap("Unauthorized: Age verification required");
     };
 
-    let postsArray = feedPosts.values().toArray();
+    let postsArray = feedPosts.values().toArray().filter(
+      func(post) {
+        not areUsersMutuallyBlockedInternal(caller, post.author);
+      }
+    );
     postsArray.sort<FeedPost>(FeedPost.compareByTimestamp);
   };
 
@@ -505,6 +545,10 @@ actor {
 
     if (not isAgeVerified(caller)) {
       Runtime.trap("Unauthorized: Age verification required");
+    };
+
+    if (areUsersMutuallyBlockedInternal(caller, user)) {
+      Runtime.trap("Cannot view posts: user is blocked");
     };
 
     feedPosts.values().toArray().filter<FeedPost>(
@@ -536,7 +580,6 @@ actor {
     };
   };
 
-  // Reporting System
   public shared ({ caller }) func reportContent(reportedUser : ?Principal, reportedPost : ?Nat, reason : Text) : async () {
     checkRequestLimit(caller);
 
@@ -579,7 +622,6 @@ actor {
     reports.add(reportId, reportList);
   };
 
-  // Admin function to view reports
   public query ({ caller }) func getReports() : async [(Nat, [Report])] {
     if (not AccessControl.isAdmin(accessControlState, caller)) {
       Runtime.trap("Unauthorized: Only admins can view reports");
@@ -589,5 +631,179 @@ actor {
     entriesArray.map<(Nat, List.List<Report>), (Nat, [Report])>(
       func((id, list)) { (id, list.toArray()) }
     );
+  };
+
+  public shared ({ caller }) func blockUser(target : Principal) : async () {
+    checkRequestLimit(caller);
+
+    if (caller == target) {
+      Runtime.trap("You cannot block yourself");
+    };
+
+    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
+      Runtime.trap("Unauthorized: Only users can block others");
+    };
+
+    if (not isAgeVerified(caller)) {
+      Runtime.trap("Unauthorized: Age verification required");
+    };
+
+    let blockList = switch (userBlocks.get(caller)) {
+      case (null) { List.empty<Principal>() };
+      case (?list) { list };
+    };
+
+    let alreadyBlocked = blockList.any(
+      func(b) { b == target }
+    );
+    if (alreadyBlocked) {
+      Runtime.trap("User is already blocked");
+    };
+
+    let newBlock : Principal = target;
+    blockList.add(newBlock);
+    userBlocks.add(caller, blockList);
+
+    switch (friendRequests.get(caller)) {
+      case (null) {};
+      case (?requestsList) {
+        let updatedRequests = requestsList.toArray().filter(
+          func(r) { r.to != target }
+        );
+        let filteredRequests = List.empty<FriendRequest>();
+        for (request in updatedRequests.values()) {
+          filteredRequests.add(request);
+        };
+        friendRequests.add(caller, filteredRequests);
+      };
+    };
+
+    switch (friendRequests.get(target)) {
+      case (null) {};
+      case (?requestsList) {
+        let updatedRequests = requestsList.toArray().filter(
+          func(r) { r.from != caller }
+        );
+        let filteredRequests = List.empty<FriendRequest>();
+        for (request in updatedRequests.values()) {
+          filteredRequests.add(request);
+        };
+        friendRequests.add(target, filteredRequests);
+      };
+    };
+
+    switch (friends.get(caller)) {
+      case (null) {};
+      case (?friendsList) {
+        let updatedFriends = friendsList.toArray().filter(
+          func(f) { f != target }
+        );
+        let filteredFriends = List.empty<Principal>();
+        for (friend in updatedFriends.values()) {
+          filteredFriends.add(friend);
+        };
+        friends.add(caller, filteredFriends);
+      };
+    };
+
+    switch (friends.get(target)) {
+      case (null) {};
+      case (?friendsList) {
+        let updatedFriends = friendsList.toArray().filter(
+          func(f) { f != caller }
+        );
+        let filteredFriends = List.empty<Principal>();
+        for (friend in updatedFriends.values()) {
+          filteredFriends.add(friend);
+        };
+        friends.add(target, filteredFriends);
+      };
+    };
+  };
+
+  public shared ({ caller }) func unblockUser(target : Principal) : async () {
+    checkRequestLimit(caller);
+
+    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
+      Runtime.trap("Unauthorized: Only users can unblock others");
+    };
+
+    if (not isAgeVerified(caller)) {
+      Runtime.trap("Unauthorized: Age verification required");
+    };
+
+    let blockList = switch (userBlocks.get(caller)) {
+      case (null) { List.empty<Principal>() };
+      case (?list) { list };
+    };
+
+    let filteredBlocks = blockList.filter(
+      func(block) { block != target }
+    );
+    userBlocks.add(caller, filteredBlocks);
+  };
+
+  public query ({ caller }) func getBlockedUsers() : async [Principal] {
+    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
+      Runtime.trap("Unauthorized: Only users can view their block list");
+    };
+
+    if (not isAgeVerified(caller)) {
+      Runtime.trap("Unauthorized: Age verification required");
+    };
+
+    switch (userBlocks.get(caller)) {
+      case (null) { [] };
+      case (?list) { list.toArray() };
+    };
+  };
+
+  public query ({ caller }) func isUserBlocked(target : Principal) : async Bool {
+    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
+      Runtime.trap("Unauthorized: Only users can check block status");
+    };
+
+    if (not isAgeVerified(caller)) {
+      Runtime.trap("Unauthorized: Age verification required");
+    };
+
+    isUserBlockedBy(caller, target);
+  };
+
+  public shared ({ caller }) func deleteOwnAccount() : async () {
+    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
+      Runtime.trap("Unauthorized: Only users can delete their accounts");
+    };
+
+    userProfiles.remove(caller);
+    friendRequests.remove(caller);
+    friends.remove(caller);
+    userBlocks.remove(caller);
+
+    let postsToDelete = feedPosts.values().toArray().filter(
+      func(post) { post.author == caller }
+    );
+    for (post in postsToDelete.values()) {
+      feedPosts.remove(post.id);
+    };
+
+    let reportsToDelete = reports.entries().toArray().filter(
+      func((_, reportList)) {
+        let reports = reportList.toArray();
+        reports.size() > 0 and reports[0].reporter == caller;
+      }
+    );
+    for ((reportId, _) in reportsToDelete.values()) {
+      reports.remove(reportId);
+    };
+
+    let remainingRates = rateLimitMap.entries().toArray().filter(
+      func((principal, _)) { principal != caller }
+    );
+
+    rateLimitMap.clear();
+    for ((principal, entry) in remainingRates.values()) {
+      rateLimitMap.add(principal, entry);
+    };
   };
 };

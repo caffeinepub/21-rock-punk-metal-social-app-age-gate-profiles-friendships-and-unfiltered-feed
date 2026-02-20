@@ -11,6 +11,29 @@ export function normalizeBackendError(error: unknown): Error {
     return new Error('Too many requests. Please wait a moment and try again.');
   }
   
+  // Blocking errors
+  if (errorMessage.includes('user is blocked') || errorMessage.includes('Cannot interact')) {
+    return new Error('This action is not available because one of you has blocked the other.');
+  }
+  if (errorMessage.includes('Cannot view profile: user is blocked')) {
+    return new Error('You cannot view this profile.');
+  }
+  if (errorMessage.includes('Cannot view posts: user is blocked')) {
+    return new Error('You cannot view posts from this user.');
+  }
+  if (errorMessage.includes('Cannot view friends: user is blocked')) {
+    return new Error('You cannot view this user\'s friends.');
+  }
+  if (errorMessage.includes('Cannot like post: user is blocked')) {
+    return new Error('You cannot like this post.');
+  }
+  if (errorMessage.includes('Cannot send friend request: user is blocked')) {
+    return new Error('You cannot send a friend request to this user.');
+  }
+  if (errorMessage.includes('Cannot respond to friend request: user is blocked')) {
+    return new Error('You cannot respond to this friend request.');
+  }
+  
   // Validation errors - display name
   if (errorMessage.includes('Display name must be between')) {
     return new Error('Display name must be between 5 and 50 characters.');

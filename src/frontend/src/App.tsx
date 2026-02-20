@@ -1,57 +1,87 @@
+import { useEffect } from 'react';
+import { useGetCallerProfile } from './hooks/useQueries';
 import { useInternetIdentity } from './hooks/useInternetIdentity';
-import { useGetCallerUserProfile } from './hooks/useQueries';
 import LandingPage from './pages/LandingPage';
+import { AppShell } from './components/layout/AppShell';
 import AgeVerificationPage from './pages/AgeVerificationPage';
-import AppShell from './components/layout/AppShell';
-import { Toaster } from 'sonner';
-import { ThemeProvider } from 'next-themes';
+import DeleteAccountPage from './pages/DeleteAccountPage';
+import InAppBrowserNotice from './components/system/InAppBrowserNotice';
+import { CacheClearingModal } from './components/system/CacheClearingModal';
+import { isInAppBrowser } from './utils/inAppBrowser';
+import { isInternetIdentityReturnUrl } from './utils/iiReturnFlow';
 
-export default function App() {
+function App() {
   const { identity, isInitializing } = useInternetIdentity();
-  const { data: userProfile, isLoading: profileLoading, isFetched } = useGetCallerUserProfile();
+  const { data: profile, isLoading: profileLoading, isFetched } = useGetCallerProfile();
 
-  const isAuthenticated = !!identity;
+  const showInAppBrowserNotice = isInAppBrowser() && !isInternetIdentityReturnUrl();
 
-  // Show loading state during initialization
-  if (isInitializing || (isAuthenticated && profileLoading && !isFetched)) {
+  // Check if current path is /delete-account - show this page publicly before any auth checks
+  const isDeleteAccountPage = window.location.pathname === '/delete-account' || window.location.pathname === '/delete-account/';
+
+  useEffect(() => {
+    if (showInAppBrowserNotice) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [showInAppBrowserNotice]);
+
+  // Show in-app browser notice only if NOT on delete-account page
+  if (showInAppBrowserNotice && !isDeleteAccountPage) {
+    return <InAppBrowserNotice />;
+  }
+
+  // Show delete account page publicly regardless of auth state (Google Play requirement)
+  if (isDeleteAccountPage) {
+    return <DeleteAccountPage />;
+  }
+
+  // Show loading state while initializing
+  if (isInitializing) {
     return (
-      <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
-        <div className="flex h-screen items-center justify-center bg-background">
-          <div className="text-center">
-            <div className="mb-4 h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto" />
-            <p className="text-muted-foreground">Loading...</p>
-          </div>
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading...</p>
         </div>
-        <Toaster />
-      </ThemeProvider>
+      </div>
     );
   }
 
-  // Not authenticated: show landing page
-  if (!isAuthenticated) {
+  // Not authenticated - show landing page
+  if (!identity) {
+    return <LandingPage />;
+  }
+
+  // Authenticated but profile loading
+  if (profileLoading) {
     return (
-      <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
-        <LandingPage />
-        <Toaster />
-      </ThemeProvider>
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading your profile...</p>
+        </div>
+      </div>
     );
   }
 
-  // Authenticated but not age verified: show age verification
-  if (!userProfile || !userProfile.isAgeVerified) {
-    return (
-      <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
-        <AgeVerificationPage />
-        <Toaster />
-      </ThemeProvider>
-    );
+  // Authenticated but no profile - show age verification
+  const showProfileSetup = !profileLoading && isFetched && profile === null;
+  if (showProfileSetup) {
+    return <AgeVerificationPage />;
   }
 
-  // Authenticated and age verified: show main app
+  // Authenticated with profile - show main app
   return (
-    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+    <>
       <AppShell />
-      <Toaster />
-    </ThemeProvider>
+      <CacheClearingModal />
+    </>
   );
 }
+
+export default App;

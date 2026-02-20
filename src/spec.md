@@ -1,11 +1,11 @@
 # Specification
 
 ## Summary
-**Goal:** Clarify the optional custom-domain prompt and enforce consistent 5–50 character, letters/numbers/hyphens-only rules for domain slugs and user display names across the app.
+**Goal:** Improve MetalHead Underground's resilience to ICP gateway connectivity issues by implementing automatic fallback mechanisms and user-friendly error handling.
 
 **Planned changes:**
-- Add a short in-app English explanation near the custom-domain prompt stating it is optional, the 5–50 character requirement, and that only letters, numbers, and hyphens are allowed; include at least one valid and one invalid example.
-- Add backend validation for `UserProfile.displayName` to require 5–50 characters (inclusive) and allow only A–Z, a–z, 0–9, and `-`, rejecting invalid values with clear English error messages across create and update/save flows.
-- Add matching frontend validation and inline guidance for display name on the Age Verification (profile creation) screen and the Profile edit screen; prevent submission/save when invalid and show clear English error messages.
+- Add automatic retry logic with alternative ICP gateway URLs (raw.icp0.io) when primary gateway fails with canister resolution errors
+- Implement a network status indicator in the app header showing gateway connectivity status (green/yellow/red) with manual retry button
+- Add a helpful modal that appears after 3 consecutive gateway failures, suggesting cache clearing steps specific to the user's device
 
-**User-visible outcome:** Users see a clear explanation of the optional custom-domain naming rules, and they can only create or save a profile display name that is 5–50 characters using letters, numbers, and hyphens, with immediate inline feedback and clear backend errors when invalid.
+**User-visible outcome:** Users experience fewer interruptions from gateway errors, with automatic recovery attempts, clear visibility into connection status, and helpful troubleshooting guidance when issues persist.

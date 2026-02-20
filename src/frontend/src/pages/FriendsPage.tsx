@@ -1,44 +1,47 @@
+import { useInternetIdentity } from '../hooks/useInternetIdentity';
 import { useGetFriends, useGetPendingRequests } from '../hooks/useQueries';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import FriendsList from '../components/friends/FriendsList';
 import FriendRequestsPanel from '../components/friends/FriendRequestsPanel';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2 } from 'lucide-react';
 
 export default function FriendsPage() {
-  const { data: friends, isLoading: friendsLoading } = useGetFriends();
+  const { identity } = useInternetIdentity();
+  const currentUserPrincipal = identity?.getPrincipal()?.toString() || '';
+  const { data: friends, isLoading: friendsLoading } = useGetFriends(currentUserPrincipal);
   const { data: pendingRequests, isLoading: requestsLoading } = useGetPendingRequests();
 
-  if (friendsLoading || requestsLoading) {
-    return (
-      <div className="flex justify-center py-12">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
-
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      <div>
-        <h1 className="text-3xl font-black mb-2">Friends</h1>
-        <p className="text-muted-foreground">Connect with your tribe</p>
-      </div>
+    <div className="max-w-4xl mx-auto py-8 px-4">
+      <h1 className="text-3xl font-bold mb-6">Friends</h1>
 
       <Tabs defaultValue="friends" className="w-full">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="friends">
-            Friends ({friends?.length || 0})
+            My Friends {friends && `(${friends.length})`}
           </TabsTrigger>
           <TabsTrigger value="requests">
-            Requests ({pendingRequests?.length || 0})
+            Requests {pendingRequests && `(${pendingRequests.length})`}
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="friends" className="mt-6">
-          <FriendsList friends={friends || []} />
+          {friendsLoading ? (
+            <div className="text-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+            </div>
+          ) : (
+            <FriendsList friends={friends || []} />
+          )}
         </TabsContent>
 
         <TabsContent value="requests" className="mt-6">
-          <FriendRequestsPanel requests={pendingRequests || []} />
+          {requestsLoading ? (
+            <div className="text-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+            </div>
+          ) : (
+            <FriendRequestsPanel requests={pendingRequests || []} />
+          )}
         </TabsContent>
       </Tabs>
     </div>

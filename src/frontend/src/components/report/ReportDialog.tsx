@@ -66,8 +66,8 @@ export default function ReportDialog({
 
     try {
       await reportMutation.mutateAsync({
-        reportedUser,
-        reportedPost,
+        reportedUser: reportedUser || undefined,
+        reportedPost: reportedPost || undefined,
         reason: fullReason,
       });
       toast.success('Report submitted. Thank you for helping keep the community safe.');

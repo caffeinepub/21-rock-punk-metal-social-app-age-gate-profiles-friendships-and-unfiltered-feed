@@ -74,8 +74,11 @@ export enum Variant_pending_rejected_accepted {
 }
 export interface backendInterface {
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
+    blockUser(target: Principal): Promise<void>;
     createPost(content: string): Promise<bigint>;
+    deleteOwnAccount(): Promise<void>;
     deletePost(postId: bigint): Promise<void>;
+    getBlockedUsers(): Promise<Array<Principal>>;
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
     getFeed(): Promise<Array<FeedPost>>;
@@ -85,11 +88,13 @@ export interface backendInterface {
     getUserPosts(user: Principal): Promise<Array<FeedPost>>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
     isCallerAdmin(): Promise<boolean>;
+    isUserBlocked(target: Principal): Promise<boolean>;
     likePost(postId: bigint): Promise<void>;
     reportContent(reportedUser: Principal | null, reportedPost: bigint | null, reason: string): Promise<void>;
     respondToFriendRequest(from: Principal, accept: boolean): Promise<void>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
     sendFriendRequest(to: Principal): Promise<void>;
+    unblockUser(target: Principal): Promise<void>;
     updateProfile(profile: UserProfile): Promise<void>;
     verifyAgeAndCreateProfile(profile: UserProfile): Promise<void>;
 }

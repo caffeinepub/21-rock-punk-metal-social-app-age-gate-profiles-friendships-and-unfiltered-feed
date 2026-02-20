@@ -1,64 +1,80 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-07T15:15:44.354Z",
+  "generatedAt": "2026-02-20T18:20:18.899Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
     "total": 3,
-    "implemented": 2,
+    "implemented": 3,
     "items": [
       {
-        "id": "REQ-15",
-        "summary": "Add an in-app explanation of the platform custom-domain prompt and its naming rules, making it clear that a custom domain is optional and that domain names must be 5–50 characters and contain only letters, numbers, and hyphens (no spaces, '+', '/', commas, or other punctuation).",
+        "id": "REQ-1",
+        "summary": "Implement a fallback mechanism in the frontend to automatically retry failed requests using alternative ICP gateway URLs (raw.icp0.io) when the primary gateway returns 'Canister ID not resolved' errors",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/pages/SettingsPage.tsx",
-          "frontend/src/components/layout/AppShell.tsx"
+          "frontend/src/hooks/useActor.ts",
+          "frontend/src/utils/gatewayFallback.ts",
+          "frontend/src/hooks/useQueries.ts"
         ],
         "matchedFiles": [
-          "frontend/src/pages/SettingsPage.tsx"
+          "frontend/src/utils/gatewayFallback.ts",
+          "frontend/src/hooks/useQueries.ts"
         ]
       },
       {
-        "id": "REQ-16",
-        "summary": "Enforce display-name validation in the backend so that UserProfile.displayName must be between 5 and 50 characters (inclusive) and may contain only letters (A–Z, a–z), numbers (0–9), and hyphens ('-'). Reject invalid values with a clear English error message.",
-        "status": "unknown",
-        "plannedFiles": [],
-        "matchedFiles": []
-      },
-      {
-        "id": "REQ-17",
-        "summary": "Add matching frontend validation for display name on the Age Verification (profile creation) screen and Profile edit screen: require 5–50 characters and only letters, numbers, and hyphens; show clear English inline guidance and prevent submission when invalid.",
+        "id": "REQ-2",
+        "summary": "Add a network status indicator in the app header that detects and displays gateway connectivity issues, with a manual retry button",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/utils/validation.ts",
-          "frontend/src/pages/AgeVerificationPage.tsx",
-          "frontend/src/pages/ProfilePage.tsx",
-          "frontend/src/utils/backendErrors.ts"
+          "frontend/src/components/system/NetworkStatusIndicator.tsx",
+          "frontend/src/hooks/useGatewayStatus.ts",
+          "frontend/src/components/layout/AppShell.tsx",
+          "frontend/src/App.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/utils/validation.ts",
-          "frontend/src/pages/AgeVerificationPage.tsx",
-          "frontend/src/pages/ProfilePage.tsx",
-          "frontend/src/utils/backendErrors.ts"
+          "frontend/src/components/system/NetworkStatusIndicator.tsx",
+          "frontend/src/hooks/useGatewayStatus.ts",
+          "frontend/src/components/layout/AppShell.tsx",
+          "frontend/src/App.tsx"
+        ]
+      },
+      {
+        "id": "REQ-3",
+        "summary": "Implement client-side DNS cache clearing mechanism that suggests browser cache clearing steps when persistent gateway errors are detected",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/components/system/CacheClearingModal.tsx",
+          "frontend/src/utils/deviceDetection.ts",
+          "frontend/src/hooks/useGatewayStatus.ts",
+          "frontend/src/App.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/components/system/CacheClearingModal.tsx",
+          "frontend/src/utils/deviceDetection.ts",
+          "frontend/src/hooks/useGatewayStatus.ts",
+          "frontend/src/App.tsx"
         ]
       }
     ]
   },
   "changedFiles": [
-    "backend/main.mo",
     "build-request.json",
+    "caffeine.lock.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/pages/AgeVerificationPage.tsx",
-    "frontend/src/pages/ProfilePage.tsx",
-    "frontend/src/pages/SettingsPage.tsx",
-    "frontend/src/utils/backendErrors.ts",
-    "frontend/src/utils/validation.ts",
+    "frontend/src/App.tsx",
+    "frontend/src/components/layout/AppShell.tsx",
+    "frontend/src/components/system/CacheClearingModal.tsx",
+    "frontend/src/components/system/NetworkStatusIndicator.tsx",
+    "frontend/src/config.ts",
+    "frontend/src/hooks/useGatewayStatus.ts",
+    "frontend/src/hooks/useQueries.ts",
+    "frontend/src/utils/deviceDetection.ts",
+    "frontend/src/utils/gatewayFallback.ts",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",
