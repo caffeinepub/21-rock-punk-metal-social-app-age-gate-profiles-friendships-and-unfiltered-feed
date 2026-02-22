@@ -1,7 +1,7 @@
 {
-  "name": "MetalHead",
+  "name": "MetalHead Underground",
   "short_name": "MetalHead",
-  "description": "Age-verified social network for rock, punk, and metal fans",
+  "description": "21+ social network for rock, punk, and metal fans to connect, share posts, and make friends",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0a0a0a",

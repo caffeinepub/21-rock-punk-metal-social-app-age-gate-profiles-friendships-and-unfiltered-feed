@@ -4,37 +4,37 @@
   "summary": "New project",
   "architectural_notes": [],
   "known_issues": [
-    "ICP gateway intermittently returns 'Canister ID not resolved' errors preventing app access",
-    "Delete-account page URL fails Google Play Console validation due to gateway issues"
+    "App UI incorrectly displays content related to bands/shows/venues instead of social networking features"
   ],
-  "isFixRequest": false,
+  "isFixRequest": true,
   "existing_features": [
     {
-      "id": "feature-implement-a-fallback-mechanism-in-the-frontend-to-automatically-retry-failed-requests-using-alternative-icp-gateway-urls-raw-icp0-io-when-the-primary-gateway-returns-canister-id-not-resolved-errors",
-      "title": "Implement a fallback mechanism in the frontend to automatically retry failed requests using alternative ICP gateway URLs (raw.icp0.io) when the primary gateway returns 'Canister ID not resolved' errors",
+      "id": "feature-remove-all-ui-elements-text-and-references-related-to-booking-bands-shows-venues-concerts-tour-dates-event-listings-or-ticketing-from-the-frontend-application",
+      "title": "Remove all UI elements, text, and references related to booking bands, shows, venues, concerts, tour dates, event listings, or ticketing from the frontend application",
       "reqIds": [
         "REQ-1"
       ],
       "version": 1
     },
     {
-      "id": "feature-add-a-network-status-indicator-in-the-app-header-that-detects-and-displays-gateway-connectivity-issues-with-a-manual-retry-button",
-      "title": "Add a network status indicator in the app header that detects and displays gateway connectivity issues, with a manual retry button",
+      "id": "feature-ensure-all-user-facing-text-and-ui-elements-clearly-communicate-that-metalhead-underground-is-a-social-networking-platform-for-21-metal-rock-punk-fans-to-connect-share-posts-and-make-friends",
+      "title": "Ensure all user-facing text and UI elements clearly communicate that MetalHead Underground is a social networking platform for 21+ metal/rock/punk fans to connect, share posts, and make friends",
       "reqIds": [
         "REQ-2"
       ],
       "version": 1
-    },
+    }
+  ],
+  "new_feature_requests": [
     {
-      "id": "feature-implement-client-side-dns-cache-clearing-mechanism-that-suggests-browser-cache-clearing-steps-when-persistent-gateway-errors-are-detected",
-      "title": "Implement client-side DNS cache clearing mechanism that suggests browser cache clearing steps when persistent gateway errors are detected",
+      "id": "AR-3",
+      "summary": "Verify that all existing social networking features (user profiles with favorite bands/genres, friend requests, social feed with posts/likes/comments, blocking, reporting) are correctly displayed and functional in the UI",
       "reqIds": [
         "REQ-3"
       ],
-      "version": 1
+      "status": "pending"
     }
   ],
-  "new_feature_requests": [],
   "projectName": "MetalHead Underground",
   "clarification_mode": "instant",
   "clarification_rounds": 0

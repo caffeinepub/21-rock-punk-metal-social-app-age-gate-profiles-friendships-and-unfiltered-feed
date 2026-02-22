@@ -1,73 +1,76 @@
 {
   "kind": "build_request",
-  "title": "Continue MetalHead Underground development",
+  "title": "Fix UI displaying incorrect bands/shows/venues content",
   "projectName": "MetalHead Underground",
-  "priority": "normal",
+  "priority": "high",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Implement a fallback mechanism in the frontend to automatically retry failed requests using alternative ICP gateway URLs (raw.icp0.io) when the primary gateway returns 'Canister ID not resolved' errors",
+      "text": "Remove all UI elements, text, and references related to booking bands, shows, venues, concerts, tour dates, event listings, or ticketing from the frontend application",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-15"
+          "msg-10"
+        ],
+        "quotes": [
+          "Well we gotta fix the issue"
         ]
       },
       "acceptanceCriteria": [
-        "When a canister request fails with gateway resolution errors, the system automatically retries using the raw.icp0.io gateway",
-        "Users see a loading state during retry attempts",
-        "Failed requests are logged for debugging",
-        "Successful retry displays content without requiring manual URL changes"
+        "No text or UI elements mention bands booking shows or venues",
+        "No references to concerts, tour dates, or event management",
+        "No ticketing or venue-related features are visible",
+        "All pages display only social networking features (profiles, friends, posts, feed)"
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Add a network status indicator in the app header that detects and displays gateway connectivity issues, with a manual retry button",
+      "text": "Ensure all user-facing text and UI elements clearly communicate that MetalHead Underground is a social networking platform for 21+ metal/rock/punk fans to connect, share posts, and make friends",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-15"
+          "msg-10"
+        ],
+        "quotes": [
+          "Well we gotta fix the issue"
         ]
       },
       "acceptanceCriteria": [
-        "Status indicator shows green when gateway is responding normally",
-        "Status indicator shows yellow/warning when using fallback gateway",
-        "Status indicator shows red when gateway requests are failing",
-        "Manual retry button allows users to force a connection attempt",
-        "Indicator is visible but unobtrusive in the app layout"
+        "Landing page clearly describes the app as a social network for metalheads",
+        "All feature descriptions emphasize user profiles, friend connections, and social feed",
+        "No confusion about the app's core purpose as a community platform",
+        "Marketing copy focuses on connecting people, not booking services"
       ]
     },
     {
       "id": "REQ-3",
-      "text": "Implement client-side DNS cache clearing mechanism that suggests browser cache clearing steps when persistent gateway errors are detected",
+      "text": "Verify that all existing social networking features (user profiles with favorite bands/genres, friend requests, social feed with posts/likes/comments, blocking, reporting) are correctly displayed and functional in the UI",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-12",
-          "msg-13"
+          "msg-10"
         ]
       },
       "acceptanceCriteria": [
-        "After 3 consecutive gateway failures, show a helpful modal with cache clearing instructions",
-        "Instructions are device-specific (Android tablet, phone, desktop)",
-        "Modal includes options to try alternative gateway or switch networks",
-        "Users can dismiss the modal and continue attempting",
-        "Modal does not appear more than once per session"
+        "Feed page shows post composer and user posts",
+        "Friends page displays friends list and pending requests",
+        "Profile page allows editing display name, bio, location, favorite genres, and bands",
+        "Blocking and reporting features are accessible",
+        "All social networking features work as intended"
       ]
     }
   ],
   "constraints": [
-    "Must maintain single-actor backend architecture",
-    "Cannot modify immutable frontend paths: useInternetIdentity.ts, useInternetIdentity.tsx, useActor.ts, main.tsx, components/ui/*",
-    "Must work within ICP's gateway infrastructure without requiring external services",
-    "Gateway fallback logic must not break existing authentication flow"
+    "Do not modify backend logic or data models",
+    "Preserve all existing social networking functionality",
+    "Maintain the 21+ age verification flow",
+    "Keep the rock/metal/punk aesthetic and branding"
   ],
   "nonGoals": [
-    "Fixing the underlying ICP gateway infrastructure issues",
-    "Implementing custom DNS resolution or proxy servers",
-    "Adding third-party monitoring or analytics services",
-    "Modifying backend canister code for gateway issues",
-    "Creating alternative hosting outside ICP ecosystem"
+    "Adding any band booking or venue management features",
+    "Creating concert or event listing functionality",
+    "Implementing ticketing systems",
+    "Changing the app's core purpose as a social network"
   ],
   "imageRequirements": {
     "required": [],

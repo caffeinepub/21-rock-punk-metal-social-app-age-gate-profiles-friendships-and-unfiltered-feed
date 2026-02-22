@@ -1,98 +1,117 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Frontend Gateway Fallback & Network Resilience",
+  "title": "Fix UI displaying incorrect bands/shows/venues content",
   "requirements": [
     {
       "id": "REQ-1",
-      "summary": "Implement automatic gateway fallback mechanism for failed canister requests",
+      "summary": "Remove all UI elements, text, and references related to booking bands, shows, venues, concerts, tour dates, event listings, or ticketing from the frontend application",
       "acceptanceCriteria": [
-        "When a canister request fails with gateway resolution errors, the system automatically retries using the raw.icp0.io gateway",
-        "Users see a loading state during retry attempts",
-        "Failed requests are logged for debugging",
-        "Successful retry displays content without requiring manual URL changes"
+        "No text or UI elements mention bands booking shows or venues",
+        "No references to concerts, tour dates, or event management",
+        "No ticketing or venue-related features are visible",
+        "All pages display only social networking features (profiles, friends, posts, feed)"
       ],
       "file_operations": [
         {
-          "path": "frontend/src/hooks/useActor.ts",
+          "path": "frontend/src/pages/LandingPage.tsx",
           "operation": "modify",
-          "description": "Add gateway fallback logic to the actor creation flow. When the primary gateway fails with 'Canister ID not resolved' or similar errors, automatically retry the request using raw.icp0.io as an alternative gateway URL. Include error detection logic, retry state management, and logging for debugging. Ensure the fallback mechanism integrates with the existing Internet Identity flow without breaking authentication."
+          "description": "Review and remove any text or UI elements that incorrectly suggest band booking, venue management, concert listings, tour dates, or ticketing functionality. Ensure the page clearly presents MetalHead Underground as a social networking platform for connecting metalheads, not a booking service."
         },
         {
-          "path": "frontend/src/utils/gatewayFallback.ts",
-          "operation": "create",
-          "description": "Create utility functions for gateway fallback handling including: detecting gateway resolution errors from error messages, building alternative gateway URLs (raw.icp0.io), managing retry attempts with exponential backoff, and logging failed requests for debugging. Export a reusable retry wrapper that can be used by the actor hook."
+          "path": "frontend/src/App.tsx",
+          "operation": "modify",
+          "description": "Review all text, comments, and UI flow for references to booking, venues, concerts, or events. Remove any incorrect messaging that doesn't align with the social networking purpose."
         },
         {
-          "path": "frontend/src/hooks/useQueries.ts",
+          "path": "frontend/src/components/layout/AppShell.tsx",
           "operation": "modify",
-          "description": "Integrate gateway fallback retry logic into query error handling. When queries fail due to gateway issues, trigger the fallback mechanism before marking the query as failed. Ensure loading states are preserved during retry attempts and that successful retries update the query cache correctly."
+          "description": "Remove any navigation items, menu text, or UI elements related to band booking, venue management, concert scheduling, or ticketing. Ensure navigation only includes social features: Feed, Friends, Profile, Blocked, Settings."
+        },
+        {
+          "path": "frontend/src/pages/AgeVerificationPage.tsx",
+          "operation": "modify",
+          "description": "Remove any references to booking bands, venues, or events. Ensure messaging focuses on age verification for joining a 21+ metal/rock social community."
+        },
+        {
+          "path": "frontend/src/pages/SettingsPage.tsx",
+          "operation": "modify",
+          "description": "Remove any settings, options, or text related to band booking, venue management, or event features. Keep only social networking settings."
         }
       ]
     },
     {
       "id": "REQ-2",
-      "summary": "Add network status indicator with gateway connectivity monitoring and manual retry",
+      "summary": "Ensure all user-facing text and UI elements clearly communicate that MetalHead Underground is a social networking platform for 21+ metal/rock/punk fans to connect, share posts, and make friends",
       "acceptanceCriteria": [
-        "Status indicator shows green when gateway is responding normally",
-        "Status indicator shows yellow/warning when using fallback gateway",
-        "Status indicator shows red when gateway requests are failing",
-        "Manual retry button allows users to force a connection attempt",
-        "Indicator is visible but unobtrusive in the app layout"
+        "Landing page clearly describes the app as a social network for metalheads",
+        "All feature descriptions emphasize user profiles, friend connections, and social feed",
+        "No confusion about the app's core purpose as a community platform",
+        "Marketing copy focuses on connecting people, not booking services"
       ],
       "file_operations": [
         {
-          "path": "frontend/src/components/system/NetworkStatusIndicator.tsx",
-          "operation": "create",
-          "description": "Create a network status indicator component that displays gateway connectivity state using color-coded visual feedback (green for normal, yellow for fallback, red for failures). Include a manual retry button that forces a connection attempt. Use React Query's network status and custom gateway state to determine the indicator color. Position the indicator in a visible but unobtrusive location (e.g., top-right corner with a small badge/icon)."
-        },
-        {
-          "path": "frontend/src/hooks/useGatewayStatus.ts",
-          "operation": "create",
-          "description": "Create a custom hook that tracks gateway connectivity status by monitoring actor creation attempts, query failures, and fallback usage. Export gateway state (normal, fallback, failed), retry count, last error timestamp, and a manual retry function. Use React context or a simple state manager to share status across the app."
-        },
-        {
-          "path": "frontend/src/components/layout/AppShell.tsx",
+          "path": "frontend/src/pages/LandingPage.tsx",
           "operation": "modify",
-          "description": "Wire the NetworkStatusIndicator component into the app header/shell layout. Position it in the top navigation area where it's visible but doesn't interfere with existing navigation elements. Ensure it appears on all authenticated pages."
+          "description": "Update hero section, feature descriptions, and all marketing copy to clearly communicate that MetalHead Underground is a social networking platform where 21+ metal/rock/punk fans connect, share posts, make friends, and build a community. Emphasize social features: user profiles with favorite bands/genres, friend connections, post feed with likes/comments, and community building. Remove any ambiguous language that could be misinterpreted as booking or event services."
         },
         {
-          "path": "frontend/src/App.tsx",
+          "path": "frontend/index.html",
           "operation": "modify",
-          "description": "Add gateway status context provider to wrap the app, making the status hook available throughout the component tree. Integrate with existing Internet Identity and React Query providers."
+          "description": "Update page title and meta description to clearly state that MetalHead Underground is a social network for 21+ metal/rock/punk fans to connect and share, not a booking platform. Ensure meta tags accurately describe the app's social networking purpose."
+        },
+        {
+          "path": "frontend/public/manifest.webmanifest",
+          "operation": "modify",
+          "description": "Update app name, short_name, and description in the PWA manifest to clearly communicate that MetalHead Underground is a social networking platform for connecting metalheads, emphasizing community and friendship over any booking services."
+        },
+        {
+          "path": "frontend/src/pages/AgeVerificationPage.tsx",
+          "operation": "modify",
+          "description": "Update age verification messaging to clearly state users are joining a 21+ social network for metal/rock/punk fans to connect, share posts, and make friends. Avoid any language suggesting booking or event services."
         }
       ]
     },
     {
       "id": "REQ-3",
-      "summary": "Implement cache clearing suggestion modal for persistent gateway errors",
+      "summary": "Verify that all existing social networking features (user profiles with favorite bands/genres, friend requests, social feed with posts/likes/comments, blocking, reporting) are correctly displayed and functional in the UI",
       "acceptanceCriteria": [
-        "After 3 consecutive gateway failures, show a helpful modal with cache clearing instructions",
-        "Instructions are device-specific (Android tablet, phone, desktop)",
-        "Modal includes options to try alternative gateway or switch networks",
-        "Users can dismiss the modal and continue attempting",
-        "Modal does not appear more than once per session"
+        "Feed page shows post composer and user posts",
+        "Friends page displays friends list and pending requests",
+        "Profile page allows editing display name, bio, location, favorite genres, and bands",
+        "Blocking and reporting features are accessible",
+        "All social networking features work as intended"
       ],
       "file_operations": [
         {
-          "path": "frontend/src/components/system/CacheClearingModal.tsx",
-          "operation": "create",
-          "description": "Create a modal component that displays device-specific cache clearing instructions when persistent gateway errors are detected. Include step-by-step instructions for Android tablets, phones, and desktop browsers. Add action buttons for trying the alternative gateway and dismissing the modal. Track modal display in sessionStorage to prevent showing more than once per session."
-        },
-        {
-          "path": "frontend/src/utils/deviceDetection.ts",
-          "operation": "create",
-          "description": "Create utility functions to detect the user's device type (Android tablet, Android phone, iOS, desktop) and browser. Export a function that returns device-specific cache clearing instructions with clear steps for each platform. Include detection for common browsers (Chrome, Firefox, Safari, Edge)."
-        },
-        {
-          "path": "frontend/src/hooks/useGatewayStatus.ts",
+          "path": "frontend/src/pages/FeedPage.tsx",
           "operation": "modify",
-          "description": "Add consecutive failure tracking to the gateway status hook. When failures reach the threshold (3 consecutive failures), trigger the cache clearing modal. Track modal display state in sessionStorage to prevent repeated displays. Reset failure count on successful requests."
+          "description": "Verify the feed page correctly renders the PostComposer component and displays user posts fetched from useGetFeed hook. Ensure all social features (liking, commenting if applicable, reporting) are properly wired and functional. Confirm loading and empty states display correctly."
         },
         {
-          "path": "frontend/src/App.tsx",
+          "path": "frontend/src/pages/FriendsPage.tsx",
           "operation": "modify",
-          "description": "Wire the CacheClearingModal component into the root app component, controlled by the gateway status hook. Ensure the modal appears above other UI elements when triggered and doesn't block critical functionality."
+          "description": "Verify the friends page correctly displays the friends list via FriendsList component and pending friend requests via FriendRequestsPanel component. Ensure tab navigation works, hooks (useGetFriends, useGetPendingRequests) are properly connected, and loading states display correctly."
+        },
+        {
+          "path": "frontend/src/pages/ProfilePage.tsx",
+          "operation": "modify",
+          "description": "Verify the profile editing page correctly displays and allows editing of display name, bio, location, favorite genres, and favorite bands. Ensure validation works, the ClearFavoriteBandsConfirmDialog functions properly, and profile updates save successfully via backend calls."
+        },
+        {
+          "path": "frontend/src/pages/BlockedUsersPage.tsx",
+          "operation": "modify",
+          "description": "Verify the blocked users page correctly displays the list of blocked users using BlockedUserRow components. Ensure unblock functionality works, loading states display correctly, and empty state shows when no users are blocked."
+        },
+        {
+          "path": "frontend/src/components/feed/PostCard.tsx",
+          "operation": "modify",
+          "description": "Verify PostCard displays post content, author information, timestamp, and like count correctly. Ensure like, delete, friend request, block/unblock, and report functionality all work as intended and are properly wired to backend calls."
+        },
+        {
+          "path": "frontend/src/components/report/ReportDialog.tsx",
+          "operation": "modify",
+          "description": "Verify the ReportDialog component correctly displays report reasons, captures user input, and submits reports for both posts and users. Ensure character limits are enforced and toast confirmations appear after successful submission."
         }
       ]
     }

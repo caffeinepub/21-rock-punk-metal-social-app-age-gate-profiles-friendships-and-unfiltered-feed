@@ -1,80 +1,73 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-20T18:20:18.899Z",
+  "generatedAt": "2026-02-20T19:19:03.226Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
     "total": 3,
-    "implemented": 3,
+    "implemented": 2,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Implement a fallback mechanism in the frontend to automatically retry failed requests using alternative ICP gateway URLs (raw.icp0.io) when the primary gateway returns 'Canister ID not resolved' errors",
+        "summary": "Remove all UI elements, text, and references related to booking bands, shows, venues, concerts, tour dates, event listings, or ticketing from the frontend application",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/hooks/useActor.ts",
-          "frontend/src/utils/gatewayFallback.ts",
-          "frontend/src/hooks/useQueries.ts"
+          "frontend/src/pages/LandingPage.tsx",
+          "frontend/src/App.tsx",
+          "frontend/src/components/layout/AppShell.tsx",
+          "frontend/src/pages/AgeVerificationPage.tsx",
+          "frontend/src/pages/SettingsPage.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/utils/gatewayFallback.ts",
-          "frontend/src/hooks/useQueries.ts"
+          "frontend/src/pages/LandingPage.tsx",
+          "frontend/src/pages/AgeVerificationPage.tsx"
         ]
       },
       {
         "id": "REQ-2",
-        "summary": "Add a network status indicator in the app header that detects and displays gateway connectivity issues, with a manual retry button",
+        "summary": "Ensure all user-facing text and UI elements clearly communicate that MetalHead Underground is a social networking platform for 21+ metal/rock/punk fans to connect, share posts, and make friends",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/system/NetworkStatusIndicator.tsx",
-          "frontend/src/hooks/useGatewayStatus.ts",
-          "frontend/src/components/layout/AppShell.tsx",
-          "frontend/src/App.tsx"
+          "frontend/src/pages/LandingPage.tsx",
+          "frontend/index.html",
+          "frontend/public/manifest.webmanifest",
+          "frontend/src/pages/AgeVerificationPage.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/components/system/NetworkStatusIndicator.tsx",
-          "frontend/src/hooks/useGatewayStatus.ts",
-          "frontend/src/components/layout/AppShell.tsx",
-          "frontend/src/App.tsx"
+          "frontend/src/pages/LandingPage.tsx",
+          "frontend/index.html",
+          "frontend/public/manifest.webmanifest",
+          "frontend/src/pages/AgeVerificationPage.tsx"
         ]
       },
       {
         "id": "REQ-3",
-        "summary": "Implement client-side DNS cache clearing mechanism that suggests browser cache clearing steps when persistent gateway errors are detected",
-        "status": "implemented",
+        "summary": "Verify that all existing social networking features (user profiles with favorite bands/genres, friend requests, social feed with posts/likes/comments, blocking, reporting) are correctly displayed and functional in the UI",
+        "status": "missing",
         "plannedFiles": [
-          "frontend/src/components/system/CacheClearingModal.tsx",
-          "frontend/src/utils/deviceDetection.ts",
-          "frontend/src/hooks/useGatewayStatus.ts",
-          "frontend/src/App.tsx"
+          "frontend/src/pages/FeedPage.tsx",
+          "frontend/src/pages/FriendsPage.tsx",
+          "frontend/src/pages/ProfilePage.tsx",
+          "frontend/src/pages/BlockedUsersPage.tsx",
+          "frontend/src/components/feed/PostCard.tsx",
+          "frontend/src/components/report/ReportDialog.tsx"
         ],
-        "matchedFiles": [
-          "frontend/src/components/system/CacheClearingModal.tsx",
-          "frontend/src/utils/deviceDetection.ts",
-          "frontend/src/hooks/useGatewayStatus.ts",
-          "frontend/src/App.tsx"
-        ]
+        "matchedFiles": []
       }
     ]
   },
   "changedFiles": [
     "build-request.json",
-    "caffeine.lock.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/App.tsx",
-    "frontend/src/components/layout/AppShell.tsx",
-    "frontend/src/components/system/CacheClearingModal.tsx",
-    "frontend/src/components/system/NetworkStatusIndicator.tsx",
-    "frontend/src/config.ts",
-    "frontend/src/hooks/useGatewayStatus.ts",
-    "frontend/src/hooks/useQueries.ts",
-    "frontend/src/utils/deviceDetection.ts",
-    "frontend/src/utils/gatewayFallback.ts",
+    "frontend/index.html",
+    "frontend/public/manifest.webmanifest",
+    "frontend/src/pages/AgeVerificationPage.tsx",
+    "frontend/src/pages/LandingPage.tsx",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

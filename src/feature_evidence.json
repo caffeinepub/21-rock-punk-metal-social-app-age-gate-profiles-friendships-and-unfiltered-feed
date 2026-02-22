@@ -2,11 +2,11 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-implement-a-fallback-mechanism-in-the-frontend-to-automatically-retry-failed-requests-using-alternative-icp-gateway-urls-raw-icp0-io-when-the-primary-gateway-returns-canister-id-not-resolved-errors",
-      "featureTitle": "Implement a fallback mechanism in the frontend to automatically retry failed requests using alternative ICP gateway URLs (raw.icp0.io) when the primary gateway returns 'Canister ID not resolved' errors",
+      "featureId": "feature-remove-all-ui-elements-text-and-references-related-to-booking-bands-shows-venues-concerts-tour-dates-event-listings-or-ticketing-from-the-frontend-application",
+      "featureTitle": "Remove all UI elements, text, and references related to booking bands, shows, venues, concerts, tour dates, event listings, or ticketing from the frontend application",
       "files": [
-        "frontend/src/hooks/useQueries.ts",
-        "frontend/src/utils/gatewayFallback.ts"
+        "frontend/src/pages/AgeVerificationPage.tsx",
+        "frontend/src/pages/LandingPage.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -22,13 +22,13 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-add-a-network-status-indicator-in-the-app-header-that-detects-and-displays-gateway-connectivity-issues-with-a-manual-retry-button",
-      "featureTitle": "Add a network status indicator in the app header that detects and displays gateway connectivity issues, with a manual retry button",
+      "featureId": "feature-ensure-all-user-facing-text-and-ui-elements-clearly-communicate-that-metalhead-underground-is-a-social-networking-platform-for-21-metal-rock-punk-fans-to-connect-share-posts-and-make-friends",
+      "featureTitle": "Ensure all user-facing text and UI elements clearly communicate that MetalHead Underground is a social networking platform for 21+ metal/rock/punk fans to connect, share posts, and make friends",
       "files": [
-        "frontend/src/App.tsx",
-        "frontend/src/components/layout/AppShell.tsx",
-        "frontend/src/components/system/NetworkStatusIndicator.tsx",
-        "frontend/src/hooks/useGatewayStatus.ts"
+        "frontend/index.html",
+        "frontend/public/manifest.webmanifest",
+        "frontend/src/pages/AgeVerificationPage.tsx",
+        "frontend/src/pages/LandingPage.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -40,28 +40,6 @@
       ],
       "testIds": [
         "REQ-2"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-implement-client-side-dns-cache-clearing-mechanism-that-suggests-browser-cache-clearing-steps-when-persistent-gateway-errors-are-detected",
-      "featureTitle": "Implement client-side DNS cache clearing mechanism that suggests browser cache clearing steps when persistent gateway errors are detected",
-      "files": [
-        "frontend/src/App.tsx",
-        "frontend/src/components/system/CacheClearingModal.tsx",
-        "frontend/src/hooks/useGatewayStatus.ts",
-        "frontend/src/utils/deviceDetection.ts"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-3"
       ],
       "confidence": "high"
     }

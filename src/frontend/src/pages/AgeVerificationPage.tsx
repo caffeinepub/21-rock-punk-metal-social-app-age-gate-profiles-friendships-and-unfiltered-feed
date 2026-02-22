@@ -58,7 +58,7 @@ export default function AgeVerificationPage() {
 
     try {
       await verifyMutation.mutateAsync(profile);
-      toast.success('Welcome to MetalHead!');
+      toast.success('Welcome to MetalHead Underground!');
     } catch (error: any) {
       toast.error(error.message || 'Failed to create profile');
     }
@@ -80,7 +80,7 @@ export default function AgeVerificationPage() {
           </div>
           <CardTitle className="text-2xl">Age Verification Required</CardTitle>
           <CardDescription>
-            This platform is for adults 21+ only. Please confirm your age to continue.
+            MetalHead Underground is a 21+ social network for connecting with fellow metal, rock, and punk fans. Please confirm your age to join the community.
           </CardDescription>
         </CardHeader>
 
@@ -122,7 +122,7 @@ export default function AgeVerificationPage() {
                   I confirm that I am 21 years of age or older
                 </Label>
                 <p className="text-xs text-muted-foreground">
-                  By checking this box, you certify that you meet the age requirement.
+                  By checking this box, you certify that you meet the age requirement to join this social network.
                 </p>
               </div>
             </div>
@@ -138,7 +138,7 @@ export default function AgeVerificationPage() {
                   Creating Profile...
                 </>
               ) : (
-                'Continue'
+                'Join the Community'
               )}
             </Button>
           </form>

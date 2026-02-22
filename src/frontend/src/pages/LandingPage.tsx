@@ -41,7 +41,7 @@ export default function LandingPage() {
         </p>
         
         <p className="text-lg text-muted-foreground/80 mb-8">
-          The social space for rock, punk, and metal fans 21+
+          The social network for rock, punk, and metal fans 21+
         </p>
 
         <div className="flex flex-col items-center gap-4 mb-12">
@@ -85,15 +85,15 @@ export default function LandingPage() {
           <div className="bg-card/50 backdrop-blur-sm p-6 rounded-lg border border-border">
             <h3 className="font-bold text-lg mb-2">Discover</h3>
             <p className="text-sm text-muted-foreground">
-              Explore new bands, shows, and underground scenes.
+              Connect with fans who share your passion for heavy music.
             </p>
           </div>
         </div>
 
         <footer className="mt-16 text-sm text-muted-foreground/60">
-          © 2026. Built with 🤘 using{' '}
+          © {new Date().getFullYear()}. Built with 🤘 using{' '}
           <a 
-            href="https://caffeine.ai" 
+            href={`https://caffeine.ai/?utm_source=Caffeine-footer&utm_medium=referral&utm_content=${encodeURIComponent(window.location.hostname)}`}
             target="_blank" 
             rel="noopener noreferrer"
             className="underline hover:text-foreground transition-colors"
